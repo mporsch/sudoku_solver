@@ -1,0 +1,3 @@
+[submodule "repos/hypervector"]
+	path = repos/hypervector
+	url = git@github.com:mporsch/hypervector.git
