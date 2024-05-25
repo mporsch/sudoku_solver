@@ -62,34 +62,35 @@ using Grid = hypervector<Field, 2>; // width, height always in multiples of 3
 
 std::ostream& operator<<(std::ostream& os, const Grid& grid)
 {
-  using namespace grid_print_detail;
+  if(grid.size()) {
+    using namespace grid_print_detail;
 
-  auto sepTop = sepTopBlock;
-  auto sepLeft = sepLeftBlock;
+    auto sepTop = sepTopBlock;
+    auto sepLeft = sepLeftBlock;
 
-  for(size_t h = 0; h < grid.size(1); ++h) {
-    // print top field border line
+    for(size_t h = 0; h < grid.size(1); ++h) {
+      // print top field border line
+      for(size_t w = 0; w < grid.size(0); ++w) {
+        os << sepTop;
+      }
+      os << sepRightBlockBorder;
+
+      // print field line
+      for(size_t w = 0; w < grid.size(0); ++w) {
+        os << sepLeft << grid.at(w, h);
+        sepLeft = ((w + 1) % 3 ? sepLeftField : sepLeftBlock);
+      }
+      os << sepRightBlockField;
+
+      sepTop = ((h + 1) % 3 ? sepTopField : sepTopBlock);
+    }
+
+    // print bottom block border line
     for(size_t w = 0; w < grid.size(0); ++w) {
-      os << sepTop;
+      os << sepTopBlock;
     }
     os << sepRightBlockBorder;
-
-    // print field line
-    for(size_t w = 0; w < grid.size(0); ++w) {
-      os << sepLeft << grid.at(w, h);
-      sepLeft = ((w + 1) % 3 ? sepLeftField : sepLeftBlock);
-    }
-    os << sepRightBlockField;
-
-    sepTop = ((h + 1) % 3 ? sepTopField : sepTopBlock);
   }
-
-  // print bottom block border line
-  for(size_t w = 0; w < grid.size(0); ++w) {
-    os << sepTopBlock;
-  }
-  os << sepRightBlockBorder;
-
   return os;
 }
 
