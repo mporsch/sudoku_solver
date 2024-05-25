@@ -77,7 +77,7 @@ std::ostream& operator<<(std::ostream& os, const Grid& grid)
 
       // print field line
       for(size_t w = 0; w < grid.size(0); ++w) {
-        os << sepLeft << grid.at(w, h);
+        os << sepLeft << grid.at(h, w);
         sepLeft = ((w + 1) % 3 ? sepLeftField : sepLeftBlock);
       }
       os << sepRightBlockField;
