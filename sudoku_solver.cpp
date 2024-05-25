@@ -18,8 +18,6 @@ struct Field
       throw std::invalid_argument("out of range");
     }
   }
-
-  friend std::ostream& operator<<(std::ostream& os, const Field&);
 };
 
 std::ostream& operator<<(std::ostream& os, const Field& f)
@@ -31,20 +29,16 @@ std::ostream& operator<<(std::ostream& os, const Field& f)
 constexpr auto undef = Field(0);
 
 
-// Block is 3x3 Fields
-using Grid = hypervector<Field, 2>; // width, height always in multiples of 3
-
+namespace grid_print_detail {
 
 struct SepField
 {
-  const char* str;
+  std::string_view str;
 
   constexpr SepField(const char* str)
     : str(str)
   {
   }
-
-  friend std::ostream& operator<<(std::ostream& os, const SepField&);
 };
 
 std::ostream& operator<<(std::ostream& os, const SepField& sep)
@@ -53,34 +47,47 @@ std::ostream& operator<<(std::ostream& os, const SepField& sep)
   return os;
 }
 
-constexpr auto sepBlockTop = SepField("+~~~");
-constexpr auto sepFieldTop = SepField("+---");
-constexpr auto sepBlockLeft = SepField("|");
-constexpr auto sepFieldLeft = SepField(":");
+constexpr auto sepTopBlock = SepField("+~~~");
+constexpr auto sepTopField = SepField("+---");
+constexpr auto sepLeftBlock = SepField("|");
+constexpr auto sepLeftField = SepField(":");
+constexpr auto sepRightBlockBorder = SepField("+\n");
+constexpr auto sepRightBlockField = SepField("|\n");
+
+} // namespace grid_print_detail
+
+// Block is 3x3 Fields
+using Grid = hypervector<Field, 2>; // width, height always in multiples of 3
 
 std::ostream& operator<<(std::ostream& os, const Grid& grid)
 {
-  auto sepH = sepBlockTop;
-  auto sepW = sepBlockLeft;
+  using namespace grid_print_detail;
+
+  auto sepTop = sepTopBlock;
+  auto sepLeft = sepLeftBlock;
 
   for(size_t h = 0; h < grid.size(1); ++h) {
+    // print top field border line
     for(size_t w = 0; w < grid.size(0); ++w) {
-      os << sepH;
+      os << sepTop;
     }
-    os << "+\n";
+    os << sepRightBlockBorder;
 
+    // print field line
     for(size_t w = 0; w < grid.size(0); ++w) {
-      os << sepW << grid.at(w, h);
-      sepW = ((w + 1) % 3 ? sepFieldLeft : sepBlockLeft);
+      os << sepLeft << grid.at(w, h);
+      sepLeft = ((w + 1) % 3 ? sepLeftField : sepLeftBlock);
     }
-    os << "|\n";
+    os << sepRightBlockField;
 
-    sepH = ((h + 1) % 3 ? sepFieldTop : sepBlockTop);
+    sepTop = ((h + 1) % 3 ? sepTopField : sepTopBlock);
   }
+
+  // print bottom block border line
   for(size_t w = 0; w < grid.size(0); ++w) {
-    os << sepH;
+    os << sepTopBlock;
   }
-  os << "+\n";
+  os << sepRightBlockBorder;
 
   return os;
 }
