@@ -4,8 +4,12 @@ project(sudoku_solver CXX)
 
 find_package(hypervector REQUIRED HINTS repos/hypervector)
 
+include(FetchContent)
+FetchContent_Declare(lexy URL https://github.com/foonathan/lexy/releases/download/v2022.12.1/lexy-src.zip)
+FetchContent_MakeAvailable(lexy)
+
 add_executable(sudoku_solver
   sudoku_solver.cpp
 )
 target_compile_features(sudoku_solver PRIVATE cxx_std_20) # for std::string_view::starts_with
-target_link_libraries(sudoku_solver hypervector)
+target_link_libraries(sudoku_solver PRIVATE hypervector foonathan::lexy::core)

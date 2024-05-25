@@ -1,4 +1,5 @@
 #include "hypervector.h"
+#include "lexy/dsl.hpp"
 
 #include <cstdlib>
 #include <iostream>
