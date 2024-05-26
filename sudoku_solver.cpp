@@ -10,9 +10,18 @@
 
 struct Field
 {
-  unsigned char num;
+  using value_type = unsigned char;
 
-  constexpr Field(unsigned char num)
+  static constexpr value_type undef = 0;
+
+  value_type num;
+
+  constexpr Field()
+    : num(undef)
+  {
+  }
+
+  constexpr Field(value_type num)
     : num(num)
   {
     if(num >= 10) {
@@ -26,9 +35,6 @@ std::ostream& operator<<(std::ostream& os, const Field& f)
   os << ' ' << (f.num ? static_cast<char>(f.num + 48) : ' ') << ' ';
   return os;
 }
-
-constexpr auto undef = Field(0);
-
 
 namespace grid_print_detail {
 
@@ -115,7 +121,7 @@ T ParseValue(std::string_view arg)
 
 int PrintTemplate(unsigned w, unsigned h)
 {
-  std::cout << Grid(w * 3, h * 3, undef) << std::endl;
+  std::cout << Grid(w * 3, h * 3) << std::endl;
   return EXIT_SUCCESS;
 }
 
