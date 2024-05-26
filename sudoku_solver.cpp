@@ -1,5 +1,11 @@
 #include "hypervector.h"
+#include "lexy/action/parse.hpp"
+#include "lexy/action/validate.hpp"
+#include "lexy/callback/container.hpp"
+#include "lexy/callback/string.hpp"
 #include "lexy/dsl.hpp"
+#include "lexy/input/string_input.hpp"
+#include "lexy_ext/report_error.hpp"
 
 #include <cstdlib>
 #include <iostream>
@@ -100,6 +106,59 @@ std::ostream& operator<<(std::ostream& os, const Grid& grid)
   return os;
 }
 
+namespace grid_parse_detail {
+namespace grammar {
+
+namespace dsl = lexy::dsl;
+
+struct field_string
+{
+  static constexpr auto atext = LEXY_CHAR_CLASS("atext", dsl::ascii::digit / dsl::ascii::space);
+
+  static constexpr auto rule = dsl::identifier(atext);
+
+  static constexpr auto value = lexy::as_string<std::string>;
+};
+
+struct fields
+{
+  static constexpr auto rule = [] {
+    auto sep = dsl::trailing_sep(dsl::colon | dsl::vbar);
+    return dsl::list(dsl::p<field_string>, sep);
+  }();
+
+  static constexpr auto value = lexy::as_list<std::vector<std::string>>;
+};
+
+struct production
+{
+  static constexpr auto rule = [] {
+    return dsl::opt(dsl::vbar >> dsl::p<fields>);
+  }();
+
+  static constexpr auto value = lexy::as_list<std::vector<std::string>>;
+};
+
+} // namespace grammar
+} // namespace grid_parse_detail
+
+std::istream& operator>>(std::istream& is, Grid& grid)
+{
+  using namespace grid_parse_detail;
+
+  std::string str;
+  while(std::getline(is, str)) {
+    auto input = lexy::string_input(str);
+
+    if(auto valid = lexy::validate<grammar::production>(input, lexy_ext::report_error); valid.is_success()) {
+      if(auto parsed = lexy::parse<grammar::production>(input, lexy_ext::report_error); parsed.has_value()) {
+        auto field_strings = parsed.value();
+      }
+    }
+  }
+  return is;
+}
+
 
 template<typename T>
 T ParseValue(std::string const &arg)
@@ -165,6 +224,15 @@ int main(int argc, char** argv)
       return PrintTemplate(3, 3);
     }
   }
+
+  auto input = R"(
++~~~+~~~+~~~+~~~+~~~+~~~+~~~+~~~+~~~+
+| 6 :   : 2 |   : 8 :   |   :   :   |
+)";
+  std::istringstream iss(input);
+
+  Grid grid;
+  iss >> grid;
 
   return Usage(argv[0]);
 }
