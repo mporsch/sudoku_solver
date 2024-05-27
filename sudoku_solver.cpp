@@ -144,15 +144,26 @@ struct production
 
 std::istream& operator>>(std::istream& is, Grid& grid)
 {
-  using namespace grid_parse_detail;
+  grid.resize(0, 0);
+  grid.reserve(9 * 9); // reasonable size assumption
 
   std::string str;
   while(std::getline(is, str)) {
-    auto input = lexy::string_input(str);
+    using namespace grid_parse_detail;
 
+    auto input = lexy::string_input(str);
     if(auto valid = lexy::validate<grammar::production>(input, lexy_ext::report_error); valid.is_success()) {
       if(auto parsed = lexy::parse<grammar::production>(input, lexy_ext::report_error); parsed.has_value()) {
-        auto field_strings = parsed.value();
+        if(auto field_strings = parsed.value(); !field_strings.empty()) {
+          if(auto current_width = grid.size(1)) {
+            if(current_width != field_strings.size()) {
+              throw std::invalid_argument("unequal width of grid lines");
+            }
+          }
+
+          auto current_height = grid.size(0);
+          grid.resize(current_height + 1, field_strings.size());
+        }
       }
     }
   }
@@ -227,12 +238,31 @@ int main(int argc, char** argv)
 
   auto input = R"(
 +~~~+~~~+~~~+~~~+~~~+~~~+~~~+~~~+~~~+
-| 6 :   : 2 |   : 8 :   |   :   :   |
+|   : 3 :   |   :   :   |   :   :   |
++---+---+---+---+---+---+---+---+---+
+|   :   :   | 1 : 9 : 5 |   :   :   |
++---+---+---+---+---+---+---+---+---+
+|   :   : 8 |   :   :   |   : 6 :   |
++~~~+~~~+~~~+~~~+~~~+~~~+~~~+~~~+~~~+
+| 8 :   :   |   : 6 :   |   :   :   |
++---+---+---+---+---+---+---+---+---+
+| 4 :   :   | 8 :   :   |   :   : 1 |
++---+---+---+---+---+---+---+---+---+
+|   :   :   |   : 2 :   |   :   :   |
++~~~+~~~+~~~+~~~+~~~+~~~+~~~+~~~+~~~+
+|   : 6 :   |   :   :   | 2 : 8 :   |
++---+---+---+---+---+---+---+---+---+
+|   :   :   | 4 : 1 : 9 |   :   : 5 |
++---+---+---+---+---+---+---+---+---+
+|   :   :   |   :   :   |   : 7 :   |
++~~~+~~~+~~~+~~~+~~~+~~~+~~~+~~~+~~~+
 )";
   std::istringstream iss(input);
 
   Grid grid;
   iss >> grid;
+
+  std::cout << "\nParsed grid:\n\n" << grid << "\n";
 
   return Usage(argv[0]);
 }
