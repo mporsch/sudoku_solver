@@ -1,12 +1,13 @@
 #include "hypervector.h"
+
 #include "lexy/action/parse.hpp"
 #include "lexy/action/validate.hpp"
-#include "lexy/callback/container.hpp"
-#include "lexy/callback/string.hpp"
+#include "lexy/callback.hpp"
 #include "lexy/dsl.hpp"
 #include "lexy/input/string_input.hpp"
 #include "lexy_ext/report_error.hpp"
 
+#include <algorithm>
 #include <cstdlib>
 #include <iostream>
 #include <limits>
@@ -23,6 +24,11 @@ struct Field
   value_type num;
 
   constexpr Field()
+    : num(undef)
+  {
+  }
+
+  constexpr Field(lexy::nullopt)
     : num(undef)
   {
   }
@@ -111,23 +117,29 @@ namespace grammar {
 
 namespace dsl = lexy::dsl;
 
-struct field_string
+struct field
 {
-  static constexpr auto atext = LEXY_CHAR_CLASS("atext", dsl::ascii::digit / dsl::ascii::space);
+  // ignore all whitespace encountered within
+  static constexpr auto whitespace = dsl::whitespace(dsl::ascii::blank);
 
-  static constexpr auto rule = dsl::identifier(atext);
+  // try to parse an integer value; produce lexy::nullopt on failure
+  static constexpr auto rule = dsl::opt(dsl::integer<Field::value_type>);
 
-  static constexpr auto value = lexy::as_string<std::string>;
+  // dispatch to the appropriate constructor
+  static constexpr auto value = lexy::construct<Field>;
 };
 
 struct fields
 {
   static constexpr auto rule = [] {
     auto sep = dsl::trailing_sep(dsl::colon | dsl::vbar);
-    return dsl::list(dsl::p<field_string>, sep);
+    auto item = dsl::p<field>;
+
+    auto terminator = dsl::terminator(dsl::eol);
+    return terminator.list(item, sep);
   }();
 
-  static constexpr auto value = lexy::as_list<std::vector<std::string>>;
+  static constexpr auto value = lexy::as_list<std::vector<Field>>;
 };
 
 struct production
@@ -136,7 +148,7 @@ struct production
     return dsl::opt(dsl::vbar >> dsl::p<fields>);
   }();
 
-  static constexpr auto value = lexy::as_list<std::vector<std::string>>;
+  static constexpr auto value = lexy::as_list<std::vector<Field>>;
 };
 
 } // namespace grammar
@@ -154,15 +166,16 @@ std::istream& operator>>(std::istream& is, Grid& grid)
     auto input = lexy::string_input(str);
     if(auto valid = lexy::validate<grammar::production>(input, lexy_ext::report_error); valid.is_success()) {
       if(auto parsed = lexy::parse<grammar::production>(input, lexy_ext::report_error); parsed.has_value()) {
-        if(auto field_strings = parsed.value(); !field_strings.empty()) {
+        if(auto fields = parsed.value(); !fields.empty()) {
           if(auto current_width = grid.size(1)) {
-            if(current_width != field_strings.size()) {
+            if(current_width != fields.size()) {
               throw std::invalid_argument("unequal width of grid lines");
             }
           }
 
           auto current_height = grid.size(0);
-          grid.resize(current_height + 1, field_strings.size());
+          grid.resize(current_height + 1, fields.size());
+          (void)std::copy(begin(fields), end(fields), grid[current_height].begin());
         }
       }
     }
