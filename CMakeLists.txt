@@ -12,4 +12,4 @@ add_executable(sudoku_solver
   sudoku_solver.cpp
 )
 target_compile_features(sudoku_solver PRIVATE cxx_std_20) # for std::string_view::starts_with
-target_link_libraries(sudoku_solver PRIVATE hypervector foonathan::lexy::core)
+target_link_libraries(sudoku_solver PRIVATE hypervector foonathan::lexy::ext foonathan::lexy::core)
