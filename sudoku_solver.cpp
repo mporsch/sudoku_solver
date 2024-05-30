@@ -1,7 +1,6 @@
 #include "hypervector.h"
 
 #include "lexy/action/parse.hpp"
-#include "lexy/action/validate.hpp"
 #include "lexy/callback.hpp"
 #include "lexy/dsl.hpp"
 #include "lexy/input/string_input.hpp"
@@ -164,19 +163,17 @@ std::istream& operator>>(std::istream& is, Grid& grid)
     using namespace grid_parse_detail;
 
     auto input = lexy::string_input(str);
-    if(auto valid = lexy::validate<grammar::production>(input, lexy_ext::report_error); valid.is_success()) {
-      if(auto parsed = lexy::parse<grammar::production>(input, lexy_ext::report_error); parsed.has_value()) {
-        if(auto fields = parsed.value(); !fields.empty()) {
-          if(auto current_width = grid.size(1)) {
-            if(current_width != fields.size()) {
-              throw std::invalid_argument("unequal width of grid lines");
-            }
+    if(auto parsed = lexy::parse<grammar::production>(input, lexy_ext::report_error); parsed.has_value()) {
+      if(auto fields = parsed.value(); !fields.empty()) {
+        if(auto current_width = grid.size(1)) {
+          if(current_width != fields.size()) {
+            throw std::invalid_argument("unequal width of grid lines");
           }
-
-          auto current_height = grid.size(0);
-          grid.resize(current_height + 1, fields.size());
-          (void)std::copy(begin(fields), end(fields), grid[current_height].begin());
         }
+
+        auto current_height = grid.size(0);
+        grid.resize(current_height + 1, fields.size());
+        (void)std::copy(begin(fields), end(fields), grid[current_height].begin());
       }
     }
   }
