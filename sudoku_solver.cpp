@@ -85,7 +85,7 @@ std::ostream& operator<<(std::ostream& os, const Grid& grid)
     auto sepTop = sepTopBlock;
     auto sepLeft = sepLeftBlock;
 
-    for(size_t h = 0; h < grid.size(1); ++h) {
+    for(size_t h = 0; h < grid.size(0); ++h) {
       // print top field border line
       for(size_t w = 0; w < grid.size(0); ++w) {
         os << sepTop;
@@ -93,7 +93,7 @@ std::ostream& operator<<(std::ostream& os, const Grid& grid)
       os << sepRightBlockBorder;
 
       // print field line
-      for(size_t w = 0; w < grid.size(0); ++w) {
+      for(size_t w = 0; w < grid.size(1); ++w) {
         os << sepLeft << grid.at(h, w);
         sepLeft = ((w + 1) % 3 ? sepLeftField : sepLeftBlock);
       }
@@ -103,7 +103,7 @@ std::ostream& operator<<(std::ostream& os, const Grid& grid)
     }
 
     // print bottom block border line
-    for(size_t w = 0; w < grid.size(0); ++w) {
+    for(size_t w = 0; w < grid.size(1); ++w) {
       os << sepTopBlock;
     }
     os << sepRightBlockBorder;
@@ -173,7 +173,8 @@ std::istream& operator>>(std::istream& is, Grid& grid)
 
         auto current_height = grid.size(0);
         grid.resize(current_height + 1, fields.size());
-        (void)std::copy(begin(fields), end(fields), grid[current_height].begin());
+        auto current_row = grid[current_height];
+        (void)std::copy(begin(fields), end(fields), current_row.begin());
       }
     }
   }
