@@ -112,45 +112,44 @@ std::ostream& operator<<(std::ostream& os, const Grid& grid)
 }
 
 namespace grid_parse_detail {
-namespace grammar {
 
 namespace dsl = lexy::dsl;
 
-struct field
-{
-  // ignore all whitespace encountered within
-  static constexpr auto whitespace = dsl::whitespace(dsl::ascii::blank);
-
-  // try to parse an integer value; produce lexy::nullopt on failure
-  static constexpr auto rule = dsl::opt(dsl::integer<Field::value_type>);
-
-  // dispatch to the appropriate constructor
-  static constexpr auto value = lexy::construct<Field>;
-};
-
-struct fields
-{
-  static constexpr auto rule = [] {
-    auto sep = dsl::trailing_sep(dsl::colon | dsl::vbar);
-    auto item = dsl::p<field>;
-
-    auto terminator = dsl::terminator(dsl::eol);
-    return terminator.list(item, sep);
-  }();
-
-  static constexpr auto value = lexy::as_list<std::vector<Field>>;
-};
-
 struct production
 {
-  static constexpr auto rule = [] {
-    return dsl::opt(dsl::vbar >> dsl::p<fields>);
-  }();
+  struct field
+  {
+    // try to parse an integer value; produce lexy::nullopt on failure
+    static constexpr auto rule = dsl::opt(dsl::integer<Field::value_type>);
 
+    // dispatch to the appropriate constructor
+    static constexpr auto value = lexy::construct<Field>;
+  };
+
+  struct fields
+  {
+    // whole line with fields separated by either : or |
+    static constexpr auto rule = [] {
+      auto terminator = dsl::terminator(dsl::eol);
+      auto item = dsl::p<field>;
+      auto sep = dsl::trailing_sep(dsl::colon | dsl::vbar);
+      return terminator.list(item, sep);
+    }();
+
+    // create list of fields
+    static constexpr auto value = lexy::as_list<std::vector<Field>>;
+  };
+
+  // ignore all whitespace encountered here and in sub-rules
+  static constexpr auto whitespace = dsl::whitespace(dsl::ascii::blank);
+
+  // non-border field lines start with a |
+  static constexpr auto rule = dsl::opt(dsl::vbar >> dsl::p<fields>);
+
+  // forward list of fields created by sub-rule or create empty list
   static constexpr auto value = lexy::as_list<std::vector<Field>>;
 };
 
-} // namespace grammar
 } // namespace grid_parse_detail
 
 std::istream& operator>>(std::istream& is, Grid& grid)
@@ -163,7 +162,7 @@ std::istream& operator>>(std::istream& is, Grid& grid)
     using namespace grid_parse_detail;
 
     auto input = lexy::string_input(str);
-    if(auto parsed = lexy::parse<grammar::production>(input, lexy_ext::report_error); parsed.has_value()) {
+    if(auto parsed = lexy::parse<production>(input, lexy_ext::report_error); parsed.has_value()) {
       if(auto fields = parsed.value(); !fields.empty()) {
         if(auto current_width = grid.size(1)) {
           if(current_width != fields.size()) {
