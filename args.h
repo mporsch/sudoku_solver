@@ -9,6 +9,9 @@
 #include <optional>
 #include <iostream>
 
+#define ARG_HELP "--help"
+#define ARG_TEMPLATE "--template"
+
 struct Args
 {
   struct Template
@@ -37,39 +40,42 @@ struct Args
     }
   };
 
-  std::optional<bool> help;
+  bool help = false;
   std::optional<Template> templ;
 };
 
 namespace arg_parse_detail {
 
-#define ARG_HELP "--help"
-#define ARG_TEMPLATE "--template"
-
 namespace dsl = lexy::dsl;
 
 struct production
 {
-  static constexpr auto sep = dsl::argv_separator;
+  // in argv_input there is no trailing separator; use while_ to match zero or multiple
+  static constexpr auto sep = dsl::while_(dsl::argv_separator);
 
   struct help
   {
-    static constexpr auto rule = dsl::while_(sep);
+    // just a flag defined by identifier literal; nothing else to parse
+    static constexpr auto rule = sep;
 
+    // always true if flag is given
     static constexpr auto value = lexy::constant(true);
   };
 
   struct template_
   {
+    // =WxH is optional; if =W is given, xH is optional
     static constexpr auto rule = [] {
       auto dim = dsl::integer<Args::Template::value_type>;
       auto width_and_maybe_height = dim + dsl::opt(dsl::lit_c<'x'> >> dim);
-      return dsl::opt(dsl::lit_c<'='> >> width_and_maybe_height) + dsl::while_(sep);
+      return dsl::opt(dsl::lit_c<'='> >> width_and_maybe_height) + sep;
     }();
 
+    // dispatch to the appropriate constructor
     static constexpr auto value = lexy::construct<Args::Template>;
   };
 
+  // parse arguments by identifier literal; partial_combination, as not all have to be given
   static constexpr auto rule = [] {
     auto make_arg = [](auto name, auto rule) {
       return name >> rule;
@@ -81,6 +87,7 @@ struct production
     return dsl::partial_combination(arg_help, arg_template) + dsl::eof;
   }();
 
+  // [partial_]combination sets members by name as aggregate
   static constexpr auto value = lexy::as_aggregate<Args>;
 };
 
@@ -94,8 +101,8 @@ struct Usage
 std::ostream& operator<<(std::ostream& os, const Usage& u)
 {
   os << "Usage: " << u.name << "\n"
-    << "  [" ARG_HELP "]              show this help\n"
-    << "  ["  ARG_TEMPLATE  "[=W[xH]]]  print a template of dimensions width x height blocks to use for input\n";
+     << "  [" ARG_HELP "]              show this help\n"
+     << "  [" ARG_TEMPLATE "[=W[xH]]]  print a template of dimensions width x height blocks to use for input\n";
   return os;
 }
 
