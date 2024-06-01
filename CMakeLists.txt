@@ -10,6 +10,7 @@ FetchContent_MakeAvailable(lexy)
 
 add_executable(sudoku_solver
   sudoku_solver.cpp
+  args.h
   grid.h
   grid_parse.h
   grid_print.h
