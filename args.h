@@ -3,11 +3,13 @@
 #include "lexy/action/parse.hpp"
 #include "lexy/callback.hpp"
 #include "lexy/dsl.hpp"
-#include "lexy/input/argv_input.hpp"
+#include "lexy/input/string_input.hpp"
 #include "lexy_ext/report_error.hpp"
 
+#include <numeric>
 #include <optional>
 #include <iostream>
+#include <string>
 
 struct Args
 {
@@ -50,7 +52,7 @@ namespace dsl = lexy::dsl;
 
 struct production
 {
-  static constexpr auto sep = dsl::argv_separator;
+  static constexpr auto sep = dsl::newline;
 
   struct help
   {
@@ -78,7 +80,7 @@ struct production
     auto arg_help = make_arg(LEXY_LIT(ARG_HELP), LEXY_MEM(help) = dsl::p<help>);
     auto arg_template = make_arg(LEXY_LIT(ARG_TEMPLATE), LEXY_MEM(templ) = dsl::p<template_>);
 
-    return dsl::combination(arg_help, arg_template) + sep;
+    return dsl::combination(arg_help, arg_template) + dsl::eof;
   }();
 
   static constexpr auto value = lexy::as_aggregate<Args>;
@@ -103,7 +105,12 @@ Args ParseArgs(int argc, char** argv)
 {
   using namespace arg_parse_detail;
 
-  auto input = lexy::argv_input(argc, argv);
+  auto concat = [](std::string str, const char* arg) -> std::string {
+    return (std::move(str) + arg) + '\n';
+  };
+  auto str = std::accumulate(argv + 1, argv + argc, std::string(), concat);
+
+  auto input = lexy::string_input(str);
   if(auto parsed = lexy::parse<production>(input, lexy_ext::report_error); parsed.has_value()) {
     return parsed.value();
   }
