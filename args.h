@@ -3,13 +3,11 @@
 #include "lexy/action/parse.hpp"
 #include "lexy/callback.hpp"
 #include "lexy/dsl.hpp"
-#include "lexy/input/string_input.hpp"
+#include "lexy/input/argv_input.hpp"
 #include "lexy_ext/report_error.hpp"
 
-#include <numeric>
 #include <optional>
 #include <iostream>
-#include <string>
 
 struct Args
 {
@@ -52,7 +50,7 @@ namespace dsl = lexy::dsl;
 
 struct production
 {
-  static constexpr auto sep = dsl::newline;
+  static constexpr auto sep = dsl::argv_separator;
 
   struct help
   {
@@ -105,12 +103,7 @@ Args ParseArgs(int argc, char** argv)
 {
   using namespace arg_parse_detail;
 
-  auto concat = [](std::string str, const char* arg) -> std::string {
-    return (std::move(str) + arg) + '\n';
-  };
-  auto str = std::accumulate(argv + 1, argv + argc, std::string(), concat);
-
-  auto input = lexy::string_input(str);
+  auto input = lexy::argv_input(argc, argv);
   if(auto parsed = lexy::parse<production>(input, lexy_ext::report_error); parsed.has_value()) {
     return parsed.value();
   }
