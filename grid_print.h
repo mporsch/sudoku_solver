@@ -48,7 +48,7 @@ std::ostream& operator<<(std::ostream& os, const Grid& grid)
 
     for(size_t h = 0; h < grid.size(0); ++h) {
       // print top field border line
-      for(size_t w = 0; w < grid.size(0); ++w) {
+      for(size_t w = 0; w < grid.size(1); ++w) {
         os << sepTop;
       }
       os << sepRightBlockBorder;
