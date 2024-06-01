@@ -4,6 +4,7 @@
 #include "grid_print.h"
 
 #include <cstdlib>
+#include <iostream>
 #include <sstream>
 
 int PrintUsage(std::ostream& os, const char* name)
@@ -14,7 +15,7 @@ int PrintUsage(std::ostream& os, const char* name)
 
 int PrintTemplate(unsigned w, unsigned h)
 {
-  std::cout << Grid(w * 3, h * 3) << std::endl;
+  std::cout << Grid(h * 3, w * 3) << std::endl;
   return EXIT_SUCCESS;
 }
 
