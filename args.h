@@ -50,9 +50,11 @@ namespace dsl = lexy::dsl;
 
 struct production
 {
+  static constexpr auto sep = dsl::argv_separator;
+
   struct help
   {
-    static constexpr auto rule = dsl::eol;
+    static constexpr auto rule = sep;
 
     static constexpr auto value = lexy::constant(true);
   };
@@ -62,7 +64,7 @@ struct production
     static constexpr auto rule = [] {
       auto dim = dsl::integer<Args::Template::value_type>;
       auto width_and_maybe_height = dim + dsl::opt(dsl::lit_c<'x'> >> dim);
-      return dsl::opt(dsl::lit_c<'='> >> width_and_maybe_height) + dsl::eol;
+      return dsl::opt(dsl::lit_c<'='> >> width_and_maybe_height) + sep;
     }();
 
     static constexpr auto value = lexy::construct<Args::Template>;
@@ -76,7 +78,7 @@ struct production
     auto arg_help = make_arg(LEXY_LIT(ARG_HELP), LEXY_MEM(help) = dsl::p<help>);
     auto arg_template = make_arg(LEXY_LIT(ARG_TEMPLATE), LEXY_MEM(templ) = dsl::p<template_>);
 
-    return dsl::combination(arg_help, arg_template) + dsl::eof;
+    return dsl::combination(arg_help, arg_template) + sep;
   }();
 
   static constexpr auto value = lexy::as_aggregate<Args>;
