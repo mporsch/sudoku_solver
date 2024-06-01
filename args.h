@@ -7,6 +7,7 @@
 #include "lexy_ext/report_error.hpp"
 
 #include <optional>
+#include <iostream>
 
 struct Args
 {
@@ -15,7 +16,7 @@ struct Args
     using value_type = size_t;
 
     value_type width;
-    std::optional<value_type> height;
+    value_type height;
 
     constexpr Template(lexy::nullopt)
       : width(9)
@@ -41,6 +42,9 @@ struct Args
 };
 
 namespace arg_parse_detail {
+
+#define ARG_HELP "--help"
+#define ARG_TEMPLATE "--template"
 
 namespace dsl = lexy::dsl;
 
@@ -69,8 +73,8 @@ struct production
       return name >> rule;
     };
 
-    auto arg_help = make_arg(LEXY_LIT("--help"), LEXY_MEM(help) = dsl::p<help>);
-    auto arg_template = make_arg(LEXY_LIT("--template"), LEXY_MEM(templ) = dsl::p<template_>);
+    auto arg_help = make_arg(LEXY_LIT(ARG_HELP), LEXY_MEM(help) = dsl::p<help>);
+    auto arg_template = make_arg(LEXY_LIT(ARG_TEMPLATE), LEXY_MEM(templ) = dsl::p<template_>);
 
     return dsl::combination(arg_help, arg_template) + dsl::eof;
   }();
@@ -79,6 +83,19 @@ struct production
 };
 
 } // namespace arg_parse_detail
+
+struct Usage
+{
+  const char* name;
+};
+
+std::ostream& operator<<(std::ostream& os, const Usage& u)
+{
+  os << "Usage: " << u.name << "\n"
+    << "  [" ARG_HELP "]              show this help\n"
+    << "  ["  ARG_TEMPLATE  "[=W[xH]]]  print a template of dimensions width x height blocks to use for input\n";
+  return os;
+}
 
 Args ParseArgs(int argc, char** argv)
 {
@@ -90,3 +107,6 @@ Args ParseArgs(int argc, char** argv)
   }
   return Args{};
 }
+
+#undef ARG_HELP
+#undef ARG_TEMPLATE
