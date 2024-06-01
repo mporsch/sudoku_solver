@@ -1,3 +1,4 @@
+#include "args.h"
 #include "grid.h"
 #include "grid_parse.h"
 #include "grid_print.h"
@@ -7,65 +8,6 @@
 #include <sstream>
 #include <string>
 #include <string_view>
-
-#include "lexy/input/argv_input.hpp"
-#include "lexy/callback.hpp"
-#include "lexy/dsl.hpp"
-#include "lexy_ext/report_error.hpp"
-
-#include <optional>
-
-namespace arg_parse_detail {
-
-namespace dsl = lexy::dsl;
-
-struct Args
-{
-  struct Template
-  {
-   size_t width;
-   std::optional<size_t> height;
-  };
-
-  std::optional<bool> help;
-  std::optional<Template> templ;
-
-};
-
-struct production
-{
-  struct help
-  {
-    static constexpr auto rule = dsl::eol;
-
-    static constexpr auto value = lexy::constant(true);
-  };
-
-  struct template_
-  {
-    static constexpr auto rule =
-      dsl::integer<size_t> +
-      dsl::opt(dsl::lit_c<'x'> >> dsl::integer<size_t>) +
-      dsl::eol;
-
-    static constexpr auto value = lexy::construct<Args::Template>;
-  };
-
-  static constexpr auto rule = [] {
-    auto make_field = [](auto name, auto rule) {
-      return name >> rule;
-    };
-
-    auto name_field = make_field(LEXY_LIT("--help"), LEXY_MEM(help) = dsl::p<help>);
-    auto version_field = make_field(LEXY_LIT("--template"), LEXY_MEM(templ) = dsl::opt(dsl::lit_c<'='> >> dsl::p<template_>));
-
-    return dsl::combination(name_field, version_field) + dsl::eof;
-  }();
-
-  static constexpr auto value = lexy::as_aggregate<Args>;
-};
-
-} // namespace arg_parse_detail
 
 template<typename T>
 T ParseValue(std::string const &arg)
@@ -111,12 +53,9 @@ int Usage(const char* name)
 int main(int argc, char** argv)
 {
   if(argc >= 2) {
-    auto input = lexy::argv_input(argc, argv);
-    using namespace arg_parse_detail;
+    auto args = ParseArgs(argc, argv);
 
-    if(auto parsed = lexy::parse<production>(input, lexy_ext::report_error); parsed.has_value()) {
-      auto fields = parsed.value();
-    }
+
     auto arg = std::string_view(argv[1]);
 
     if(arg.starts_with(argHelp)) {
