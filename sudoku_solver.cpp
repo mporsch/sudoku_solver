@@ -5,12 +5,11 @@
 
 #include <cstdlib>
 #include <iostream>
-#include <sstream>
 
-int PrintUsage(std::ostream& os, const char* name)
+int PrintUsage(std::ostream& os, const char* name, int code = EXIT_SUCCESS)
 {
   os << Usage{name} << std::endl;
-  return EXIT_SUCCESS;
+  return code;
 }
 
 int PrintTemplate(unsigned w, unsigned h)
@@ -31,34 +30,17 @@ int main(int argc, char** argv)
     }
   }
 
-  auto input = R"(
-+~~~+~~~+~~~+~~~+~~~+~~~+~~~+~~~+~~~+
-|   : 3 :   |   :   :   |   :   :   |
-+---+---+---+---+---+---+---+---+---+
-|   :   :   | 1 : 9 : 5 |   :   :   |
-+---+---+---+---+---+---+---+---+---+
-|   :   : 8 |   :   :   |   : 6 :   |
-+~~~+~~~+~~~+~~~+~~~+~~~+~~~+~~~+~~~+
-| 8 :   :   |   : 6 :   |   :   :   |
-+---+---+---+---+---+---+---+---+---+
-| 4 :   :   | 8 :   :   |   :   : 1 |
-+---+---+---+---+---+---+---+---+---+
-|   :   :   |   : 2 :   |   :   :   |
-+~~~+~~~+~~~+~~~+~~~+~~~+~~~+~~~+~~~+
-|   : 6 :   |   :   :   | 2 : 8 :   |
-+---+---+---+---+---+---+---+---+---+
-|   :   :   | 4 : 1 : 9 |   :   : 5 |
-+---+---+---+---+---+---+---+---+---+
-|   :   :   |   :   :   |   : 7 :   |
-+~~~+~~~+~~~+~~~+~~~+~~~+~~~+~~~+~~~+
-)";
-  std::istringstream iss(input);
+  std::cerr << "\nPaste grid and end input with Ctrl-D:\n\n";
 
   Grid grid;
-  iss >> grid;
+  std::cin >> grid;
 
-  std::cerr << "\nParsed grid:\n\n";
-  std::cout << grid << "\n";
+  if(grid.size()) {
+    std::cerr << "\n\nParsed grid:\n\n";
+    std::cout << grid << "\n";
+    return EXIT_SUCCESS;
+  }
 
-  return PrintUsage(std::cerr, argv[0]);
+  std::cerr << "\nFailed to parse grid\n\n";
+  return PrintUsage(std::cerr, argv[0], EXIT_FAILURE);
 }
