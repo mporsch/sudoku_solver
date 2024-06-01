@@ -21,8 +21,8 @@ struct Args
     value_type height;
 
     constexpr Template(lexy::nullopt)
-      : width(9)
-      , height(9)
+      : width(3)
+      , height(3)
     {
     }
 
