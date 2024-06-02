@@ -48,7 +48,7 @@ int main(int argc, char** argv)
       return PrintTemplate(args.templ->width, args.templ->height);
     }
     if(args.stdinput) {
-      std::cerr << "\nPaste grid and end input with Ctrl-D:\n\n";
+      std::cerr << "\nPaste grid and end input with Ctrl-D / Ctrl-Z+Enter:\n\n";
       return ProcessGrid(ParseGrid(std::cin));
     }
     if(!args.filepath.empty()) {
