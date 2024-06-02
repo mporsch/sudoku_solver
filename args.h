@@ -8,6 +8,7 @@
 
 #include <optional>
 #include <iostream>
+#include <string>
 
 #define ARG_HELP "--help"
 #define ARG_TEMPLATE "--template"
@@ -22,14 +23,12 @@ struct Args
     value_type height;
 
     constexpr Template(lexy::nullopt)
-      : width(3)
-      , height(3)
+      : Template(3, 3)
     {
     }
 
     constexpr Template(value_type width, lexy::nullopt)
-      : width(width)
-      , height(width)
+      : Template(width, width)
     {
     }
 
@@ -41,7 +40,9 @@ struct Args
   };
 
   bool help = false;
+  bool stdinput = false;
   std::optional<Template> templ;
+  std::string filepath;
 };
 
 namespace arg_parse_detail {
@@ -53,7 +54,7 @@ struct production
   // in argv_input there is no trailing separator; use while_ to match zero or multiple
   static constexpr auto sep = dsl::while_(dsl::argv_separator);
 
-  struct help
+  struct flag
   {
     // just a flag defined by identifier literal; nothing else to parse
     static constexpr auto rule = sep;
@@ -75,16 +76,32 @@ struct production
     static constexpr auto value = lexy::construct<Args::Template>;
   };
 
-  // parse arguments by identifier literal; partial_combination, as not all have to be given
+  struct filepath
+  {
+    // a path and filename may include different characters incl. space
+    static constexpr auto rule = dsl::identifier(dsl::ascii::print) + sep;
+
+    static constexpr auto value = lexy::as_string<std::string>;
+  };
+
+  // identify arguments by conditions; partial_combination, as not all have to be given
   static constexpr auto rule = [] {
-    auto make_arg = [](auto name, auto rule) {
-      return name >> rule;
+    auto make_arg = [](auto condition, auto rule) {
+      return condition >> rule;
     };
 
-    auto arg_help = make_arg(LEXY_LIT(ARG_HELP), LEXY_MEM(help) = dsl::p<help>);
-    auto arg_template = make_arg(LEXY_LIT(ARG_TEMPLATE), LEXY_MEM(templ) = dsl::p<template_>);
+    // if matched, the single hyphen is consumed
+    auto single_hyphen = dsl::not_followed_by(dsl::hyphen, dsl::hyphen);
 
-    return dsl::partial_combination(arg_help, arg_template) + dsl::eof;
+    // the negative no-hyphen rule has to take separator and end-of-input into account
+    auto no_hyphen = dsl::peek_not(dsl::hyphen | dsl::argv_separator | dsl::eof);
+
+    return dsl::partial_combination(
+      make_arg(LEXY_LIT(ARG_HELP), LEXY_MEM(help) = dsl::p<flag>),
+      make_arg(LEXY_LIT(ARG_TEMPLATE), LEXY_MEM(templ) = dsl::p<template_>),
+      make_arg(single_hyphen, LEXY_MEM(stdinput) = dsl::p<flag>),
+      make_arg(no_hyphen, LEXY_MEM(filepath) = dsl::p<filepath>)
+    ) + dsl::eof;
   }();
 
   // [partial_]combination sets members by name as aggregate
@@ -101,8 +118,9 @@ struct Usage
 std::ostream& operator<<(std::ostream& os, const Usage& u)
 {
   os << "Usage: " << u.name << "\n"
-     << "  [" ARG_HELP "]              show this help\n"
-     << "  [" ARG_TEMPLATE "[=W[xH]]]  print a template of dimensions width x height blocks to use for input\n";
+     << "  [" ARG_HELP "]              Show this help.\n"
+     << "  [" ARG_TEMPLATE "[=W[xH]]]  Print a template of dimensions width x height blocks.\n"
+     << "  [FILE]                File path to read grid from. When FILE is -, read standard input.";
   return os;
 }
 
