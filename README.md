@@ -1,8 +1,8 @@
 # sudoku_solver
 Playground for sudoku puzzles.
 
-Printout and input parser uses ASCII terminal.
+Printout and input parser uses ASCII terminal or text file.
 
-Requires https://github.com/mporsch/hypervector.
+Uses [lexy parser combinator library](https://lexy.foonathan.net/) for parsing input and [hypervector](https://github.com/mporsch/hypervector) for storage.
 
-Build using CMake or `$ g++ -o sudoku_solver sudoku_solver.cpp -std=c++11` or using your favorite Windows compiler.
+Build using CMake.

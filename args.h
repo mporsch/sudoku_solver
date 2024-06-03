@@ -6,8 +6,8 @@
 #include "lexy/input/argv_input.hpp"
 #include "lexy_ext/report_error.hpp"
 
-#include <optional>
 #include <iostream>
+#include <optional>
 #include <string>
 
 #define ARG_HELP "--help"
