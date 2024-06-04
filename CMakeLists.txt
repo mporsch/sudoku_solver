@@ -9,8 +9,10 @@ FetchContent_Declare(lexy URL https://github.com/foonathan/lexy/releases/downloa
 FetchContent_MakeAvailable(lexy)
 
 add_executable(sudoku_solver
+  args_parse.cpp
   sudoku_solver.cpp
   args.h
+  args_parse.h
   grid.h
   grid_parse.h
   grid_print.h
