@@ -19,5 +19,5 @@ add_executable(sudoku_solver
   src/grid_parse.h
   src/grid_print.h
 )
-target_compile_features(sudoku_solver PRIVATE cxx_std_20) # for std::string_view::starts_with
+target_compile_features(sudoku_solver PRIVATE cxx_std_17) # for std::optional
 target_link_libraries(sudoku_solver PRIVATE hypervector foonathan::lexy::ext foonathan::lexy::core)
