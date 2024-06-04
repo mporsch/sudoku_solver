@@ -15,6 +15,19 @@ namespace {
 
 namespace dsl = lexy::dsl;
 
+Field MakeField(lexy::nullopt)
+{
+  return Field{Field::undef};
+}
+
+Field MakeField(Field::value_type num)
+{
+  if(num >= 10) {
+    throw std::invalid_argument("out of range");
+  }
+  return Field{num};
+}
+
 struct production
 {
   struct field
@@ -23,7 +36,7 @@ struct production
     static constexpr auto rule = dsl::opt(dsl::integer<Field::value_type>);
 
     // dispatch to the appropriate constructor
-    static constexpr auto value = lexy::construct<Field>;
+    static constexpr auto value = lexy::callback<Field>([](auto&&... args) { return MakeField(args...); });
   };
 
   struct fields
