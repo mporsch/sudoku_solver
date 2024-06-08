@@ -9,6 +9,16 @@ struct Field
   static constexpr value_type undef = 0;
 
   value_type num;
+
+  friend bool operator==(const Field& lhs, const Field& rhs) noexcept
+  {
+    return lhs.num == rhs.num;
+  }
+
+  friend bool operator<(const Field& lhs, const Field& rhs) noexcept
+  {
+    return lhs.num < rhs.num;
+  }
 };
 
 // Block is 3x3 Fields
