@@ -75,13 +75,13 @@ std::istream& operator>>(std::istream& is, Grid& grid)
     auto input = lexy::string_input(str);
     if(auto parsed = lexy::parse<production>(input, lexy_ext::report_error); parsed.has_value()) {
       if(auto fields = parsed.value(); !fields.empty()) {
-        if(auto current_width = grid.size(1)) {
+        if(auto current_width = grid.width()) {
           if(current_width != fields.size()) {
             throw std::invalid_argument("unequal width of grid lines");
           }
         }
 
-        auto current_height = grid.size(0);
+        auto current_height = grid.height();
         grid.resize(current_height + 1, fields.size());
         auto current_row = grid[current_height];
         (void)std::copy(begin(fields), end(fields), current_row.begin());
