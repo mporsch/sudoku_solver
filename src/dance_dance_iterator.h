@@ -62,8 +62,8 @@ private:
   }
 };
 
-template<typename wrapped_iterator, typename... Args>
-dance_dance_iterator<wrapped_iterator> make_dance_dance_iterator(wrapped_iterator it, Args&&... steps)
+template<typename wrapped_iterator, typename... Steps>
+dance_dance_iterator<wrapped_iterator> make_dance_dance_iterator(wrapped_iterator it, Steps&&... steps)
 {
   return dance_dance_iterator<wrapped_iterator>{it,
     std::deque<typename wrapped_iterator::difference_type>{

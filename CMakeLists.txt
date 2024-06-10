@@ -10,12 +10,16 @@ FetchContent_MakeAvailable(lexy)
 
 add_executable(sudoku_solver
   src/args_parse.cpp
+  src/grid_check.cpp
   src/grid_parse.cpp
   src/grid_print.cpp
   src/sudoku_solver.cpp
   src/args.h
   src/args_parse.h
+  src/custom_step_iterator.h
+  src/dance_dance_iterator.h
   src/grid.h
+  src/grid_check.h
   src/grid_parse.h
   src/grid_print.h
 )
