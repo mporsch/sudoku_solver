@@ -51,11 +51,11 @@ std::ostream& operator<<(std::ostream& os, const Grid& grid)
       // print field line
       for(size_t w = 0; w < grid.width(); ++w) {
         os << sepLeft << grid.at(h, w);
-        sepLeft = ((w + 1) % 3 ? sepLeftField : sepLeftBlock);
+        sepLeft = ((w + 1) % Grid::BlockSize ? sepLeftField : sepLeftBlock);
       }
       os << sepRightBlockField;
 
-      sepTop = ((h + 1) % 3 ? sepTopField : sepTopBlock);
+      sepTop = ((h + 1) % Grid::BlockSize ? sepTopField : sepTopBlock);
     }
 
     // print bottom block border line

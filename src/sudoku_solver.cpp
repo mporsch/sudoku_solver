@@ -16,7 +16,7 @@ int PrintUsage(std::ostream& os, const char* name, int code = EXIT_SUCCESS)
 
 int PrintTemplate(unsigned w, unsigned h)
 {
-  std::cout << Grid(h * 3, w * 3) << std::endl;
+  std::cout << Grid(h, w) << std::endl;
   return EXIT_SUCCESS;
 }
 

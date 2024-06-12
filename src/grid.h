@@ -21,13 +21,14 @@ struct Field
   }
 };
 
-// Block is 3x3 Fields
 struct Grid : public hypervector<Field, 2> // row-major; width, height always in multiples of 3
 {
+  static constexpr size_t BlockSize = 3;
+
   Grid() = default;
 
   Grid(size_t height, size_t width)
-    : hypervector<Field, 2>(height, width)
+    : hypervector<Field, 2>(height * BlockSize, width * BlockSize)
   {
   }
 
