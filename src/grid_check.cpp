@@ -79,12 +79,13 @@ auto BlockRowColRange(Grid::const_iterator it, const Grid& grid)
 
 auto BlockRange(Grid::const_iterator it, const Grid& grid)
 {
-  auto first = make_dance_dance_iterator(it,
-     1,  1, grid.offsetOf<0>(),
-    -1, -1, grid.offsetOf<0>(),
-     1,  1, -2 - 2 * grid.offsetOf<0>()); // the last step goes back to the start
-  auto last = make_dance_dance_iterator(first.base());
-  return std::make_pair(first, last);
+  // start at the top left field of a block
+  auto first = make_dance_dance_iterator(it, // +~~~~~~~+
+     1,  1, grid.offsetOf<0>(),              // | > > v |
+    -1, -1, grid.offsetOf<0>(),              // | v < < |
+     1,  1, -2 - 2 * grid.offsetOf<0>());    // | > > O |
+  auto last = make_dance_dance_iterator(it); // +~~~~~~~+
+  return std::make_pair(first, last); // the last step goes back to the start
 }
 
 bool IsSolved(Grid::container sorted)
