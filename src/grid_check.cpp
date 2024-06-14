@@ -8,9 +8,9 @@
 
 namespace {
 
-auto FieldRowRange(const Grid& grid)
+auto FieldRowRange(Grid::const_iterator it, const Grid& grid)
 {
-  auto first = make_custom_step_iterator(grid.begin(), grid.offsetOf<0>());
+  auto first = make_custom_step_iterator(it, grid.offsetOf<0>());
   auto last = std::next(first, grid.height());
   return std::make_pair(
     make_preserve_iterator(first),
@@ -22,13 +22,11 @@ auto FieldRowColRange(Grid::const_iterator it, const Grid& grid)
   return std::make_pair(it, std::next(it, grid.width()));
 }
 
-auto FieldColRange(const Grid& grid)
+auto FieldColRange(Grid::const_iterator it, const Grid& grid)
 {
-  auto first = grid.begin();
-  auto last = std::next(first, grid.offsetOf<0>());
   return std::make_pair(
-    make_preserve_iterator(first),
-    make_preserve_iterator(last));
+    make_preserve_iterator(it),
+    make_preserve_iterator(std::next(it, grid.offsetOf<0>())));
 }
 
 auto FieldColRowRange(Grid::const_iterator it, const Grid& grid)
@@ -38,9 +36,9 @@ auto FieldColRowRange(Grid::const_iterator it, const Grid& grid)
   return std::make_pair(first, last);
 }
 
-auto BlockRowRange(const Grid& grid)
+auto BlockRowRange(Grid::const_iterator it, const Grid& grid)
 {
-  auto first = make_custom_step_iterator(grid.begin(),
+  auto first = make_custom_step_iterator(it,
     grid.offsetOf<0>() * Grid::BlockSize);
   auto last = std::next(first, grid.height() / Grid::BlockSize);
   return std::make_pair(
@@ -57,7 +55,7 @@ auto BlockRowColRange(Grid::const_iterator it, const Grid& grid)
     make_preserve_iterator(last));
 }
 
-auto BlockRange(Grid::const_iterator it, const Grid& grid)
+auto BlockFieldsRange(Grid::const_iterator it, const Grid& grid)
 {
   // start at the top left field of a block
   auto first = make_dance_dance_iterator(it, // +~~~~~~~+
@@ -68,49 +66,57 @@ auto BlockRange(Grid::const_iterator it, const Grid& grid)
   return std::make_pair(first, last); // the last step goes back to the start
 }
 
+bool CheckUnique(Grid::container sorted)
+{
+  std::sort(begin(sorted), end(sorted));
+
+  if(sorted.front().num == Field::undef) {
+    return false;
+  }
+  if(std::unique(begin(sorted), end(sorted)) != end(sorted)) {
+    return false;
+  }
+  return true;
+}
+
 struct Checker
 {
   const Grid& grid;
 
-  static bool IsSolved(Grid::container sorted)
-  {
-    std::sort(begin(sorted), end(sorted));
-
-    if(sorted.front().num == Field::undef) {
-      return false;
-    }
-    if(std::unique(begin(sorted), end(sorted)) != end(sorted)) {
-      return false;
-    }
-    return true;
-  }
-
   template<typename FwdId>
-  static bool IsSolved(std::pair<FwdId, FwdId> range)
+  static bool CheckRange(std::pair<FwdId, FwdId> range)
   {
-    return IsSolved(Grid::container(range.first, range.second));
+    return CheckUnique(Grid::container(range.first, range.second));
   }
 
-  template<typename FwdId, typename F, typename... Fs>
-  bool IsSolved(
+  template<typename FwdId, typename... Fs>
+  bool CheckRange(
     std::pair<FwdId, FwdId> range,
-    F&& getNextRange,
     Fs&&... getNextRanges) const
   {
     return std::all_of(range.first, range.second,
       [&](auto it) {
-        return IsSolved(
-          getNextRange(it, grid),
-          std::forward<Fs>(getNextRanges)...);
+        return Check(it, std::forward<Fs>(getNextRanges)...);
       });
+  }
+
+  template<typename FwdId, typename F, typename... Fs>
+  bool Check(
+    FwdId it,
+    F&& getRange,
+    Fs&&... getNextRanges) const
+  {
+    return CheckRange(
+      getRange(it, grid),
+      std::forward<Fs>(getNextRanges)...);
   }
 
   operator bool() const
   {
     return true
-    && IsSolved(FieldRowRange(grid), FieldRowColRange) // field rows
-    && IsSolved(FieldColRange(grid), FieldColRowRange) // field columns
-    && IsSolved(BlockRowRange(grid), BlockRowColRange, BlockRange); // block rows, columns and fields
+    && Check(grid.begin(), FieldRowRange, FieldRowColRange)
+    && Check(grid.begin(), FieldColRange, FieldColRowRange)
+    && Check(grid.begin(), BlockRowRange, BlockRowColRange, BlockFieldsRange);
   }
 };
 
