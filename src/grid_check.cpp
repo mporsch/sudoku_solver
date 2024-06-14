@@ -8,33 +8,13 @@
 
 namespace {
 
-template<typename FwdId>
-struct Range : std::pair<FwdId, FwdId>
-{
-  FwdId begin() const noexcept
-  {
-    return this->first;
-  }
-
-  FwdId end() const noexcept
-  {
-    return this->second;
-  }
-};
-
-template<typename FwdId>
-Range<FwdId> MakeRange(std::pair<FwdId, FwdId> range)
-{
-  return Range<FwdId>{std::move(range)};
-}
-
 auto FieldRowRange(const Grid& grid)
 {
   auto first = make_custom_step_iterator(grid.begin(), grid.offsetOf<0>());
   auto last = std::next(first, grid.height());
-  return MakeRange(std::make_pair(
+  return std::make_pair(
     make_preserve_iterator(first),
-    make_preserve_iterator(last)));
+    make_preserve_iterator(last));
 }
 
 auto FieldRowColRange(Grid::const_iterator it, const Grid& grid)
@@ -46,9 +26,9 @@ auto FieldColRange(const Grid& grid)
 {
   auto first = grid.begin();
   auto last = std::next(first, grid.offsetOf<0>());
-  return MakeRange(std::make_pair(
+  return std::make_pair(
     make_preserve_iterator(first),
-    make_preserve_iterator(last)));
+    make_preserve_iterator(last));
 }
 
 auto FieldColRowRange(Grid::const_iterator it, const Grid& grid)
@@ -63,18 +43,18 @@ auto BlockRowRange(const Grid& grid)
   auto first = make_custom_step_iterator(grid.begin(),
     grid.offsetOf<0>() * Grid::BlockSize);
   auto last = std::next(first, grid.height() / Grid::BlockSize);
-  return MakeRange(std::make_pair(
+  return std::make_pair(
     make_preserve_iterator(first),
-    make_preserve_iterator(last)));
+    make_preserve_iterator(last));
 }
 
 auto BlockRowColRange(Grid::const_iterator it, const Grid& grid)
 {
   auto first = make_custom_step_iterator(it, Grid::BlockSize);
   auto last = std::next(first, grid.offsetOf<0>() / Grid::BlockSize);
-  return MakeRange(std::make_pair(
+  return std::make_pair(
     make_preserve_iterator(first),
-    make_preserve_iterator(last)));
+    make_preserve_iterator(last));
 }
 
 auto BlockRange(Grid::const_iterator it, const Grid& grid)
@@ -88,51 +68,55 @@ auto BlockRange(Grid::const_iterator it, const Grid& grid)
   return std::make_pair(first, last); // the last step goes back to the start
 }
 
-bool IsSolved(Grid::container sorted)
+struct Checker
 {
-  std::sort(begin(sorted), end(sorted));
+  const Grid& grid;
 
-  if(sorted.front().num == Field::undef) {
-    return false;
-  }
-  if(std::unique(begin(sorted), end(sorted)) != end(sorted)) {
-    return false;
-  }
-  return true;
-}
+  static bool IsSolved(Grid::container sorted)
+  {
+    std::sort(begin(sorted), end(sorted));
 
-template<typename FwdId>
-bool IsSolved(std::pair<FwdId, FwdId> range)
-{
-  return IsSolved(Grid::container(range.first, range.second));
-}
+    if(sorted.front().num == Field::undef) {
+      return false;
+    }
+    if(std::unique(begin(sorted), end(sorted)) != end(sorted)) {
+      return false;
+    }
+    return true;
+  }
+
+  template<typename FwdId>
+  static bool IsSolved(std::pair<FwdId, FwdId> range)
+  {
+    return IsSolved(Grid::container(range.first, range.second));
+  }
+
+  template<typename FwdId, typename F, typename... Fs>
+  bool IsSolved(
+    std::pair<FwdId, FwdId> range,
+    F&& getNextRange,
+    Fs&&... getNextRanges) const
+  {
+    return std::all_of(range.first, range.second,
+      [&](auto it) {
+        return IsSolved(
+          getNextRange(it, grid),
+          std::forward<Fs>(getNextRanges)...);
+      });
+  }
+
+  operator bool() const
+  {
+    return true
+    && IsSolved(FieldRowRange(grid), FieldRowColRange) // field rows
+    && IsSolved(FieldColRange(grid), FieldColRowRange) // field columns
+    && IsSolved(BlockRowRange(grid), BlockRowColRange, BlockRange); // block rows, columns and fields
+  }
+};
 
 } // namespace anonymous
 
 bool IsSolved(const Grid& grid)
 {
-  // check rows
-  for(auto row : FieldRowRange(grid)) {
-    if(!IsSolved(FieldRowColRange(row.base(), grid))) {
-      return false;
-    }
-  }
-
-  // check columns
-  for(auto col : FieldColRange(grid)) {
-    if(!IsSolved(FieldColRowRange(col, grid))) {
-      return false;
-    }
-  }
-
-  // check blocks
-  for(auto row : BlockRowRange(grid)) {
-    for(auto col : BlockRowColRange(row, grid)) {
-      if(!IsSolved(BlockRange(col, grid))) {
-        return false;
-      }
-    }
-  }
-
-  return true;
+  return Checker{grid};
 }
