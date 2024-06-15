@@ -8,6 +8,9 @@
 
 namespace {
 
+/// Ensure that dereferencing an iterator of the range returns
+/// the iterator itself (instead of a field reference) which can be used to
+/// create the next range
 template<typename FwdId>
 auto PreserveRange(std::pair<FwdId, FwdId> range)
 {
@@ -16,6 +19,9 @@ auto PreserveRange(std::pair<FwdId, FwdId> range)
     make_preserve_iterator(range.second));
 }
 
+/// Iterate over grid vertically (over whole rows or fields in a column)
+/// @tparam  Step  Size to distinguish between stepping over fields or blocks
+/// @param  it  Starting point; must be in first row of \p grid
 template<size_t Step>
 auto RowRange(Grid::const_iterator it, const Grid& grid)
 {
@@ -24,6 +30,9 @@ auto RowRange(Grid::const_iterator it, const Grid& grid)
   return std::make_pair(first, last);
 }
 
+/// Iterate over grid horizontally (over whole columns or fields in a row)
+/// @tparam  Step  Size to distinguish between stepping over fields or blocks
+/// @param  it  Starting point; must be in first column of \p grid
 template<size_t Step>
 auto ColRange(Grid::const_iterator it, const Grid& grid)
 {
@@ -65,40 +74,29 @@ struct Checker
 {
   const Grid& grid;
 
-  template<typename FwdId>
-  static bool CheckRange(std::pair<FwdId, FwdId> range)
-  {
-    return CheckUnique(Grid::container(range.first, range.second));
-  }
-
-  template<typename FwdId, typename... Fs>
-  bool CheckRange(
-    std::pair<FwdId, FwdId> range,
-    Fs&&... getNextRanges) const
-  {
-    return std::all_of(range.first, range.second,
-      [&](auto it) {
-        return Check(it, std::forward<Fs>(getNextRanges)...);
-      });
-  }
-
+  /// Variadic template to concatenate all_of iterations of layered ranges
   template<typename FwdId, typename F, typename... Fs>
   bool Check(
     FwdId it,
     F&& getRange,
     Fs&&... getNextRanges) const
   {
-    return CheckRange(
-      PreserveRange(getRange(it, grid)),
-      std::forward<Fs>(getNextRanges)...);
+    auto range = PreserveRange(getRange(it, grid));
+    return std::all_of(range.first, range.second,
+      [&](auto it) {
+        return Check(it, std::forward<Fs>(getNextRanges)...);
+      });
   }
 
+  /// Variadic template terminator to create the final range which
+  /// determines a list of fields to call the actual Sudoku check with
   template<typename FwdId, typename F>
   bool Check(
     FwdId it,
     F&& getRange) const
   {
-    return CheckRange(getRange(it, grid));
+    auto range = getRange(it, grid);
+    return CheckUnique(Grid::container(range.first, range.second));
   }
 
   operator bool() const
