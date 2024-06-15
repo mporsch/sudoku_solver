@@ -21,31 +21,26 @@ add_library(sudoku_grid
   src/grid_print.h
   src/preserve_iterator.h
 )
-target_compile_features(sudoku_grid PUBLIC cxx_std_17) # for std::optional
-target_link_libraries(sudoku_grid PUBLIC hypervector foonathan::lexy::ext foonathan::lexy::core)
+target_include_directories(sudoku_grid PUBLIC src)
+target_compile_features(sudoku_grid PUBLIC cxx_std_17) # for some radical type deduction?
+target_link_libraries(sudoku_grid
+  PUBLIC hypervector
+  PRIVATE foonathan::lexy::ext foonathan::lexy::core
+)
 
-add_executable(sudoku_solver
+add_library(sudoku_solver_args
   src/args_parse.cpp
-  src/sudoku_solver.cpp
   src/args.h
   src/args_parse.h
 )
-target_link_libraries(sudoku_solver PRIVATE sudoku_grid)
-
-
-add_executable(test_grid_check
-  src/test_grid_check.cpp
-)
-target_link_libraries(test_grid_check PRIVATE sudoku_grid)
-
-enable_testing()
-add_test(NAME test_grid_check COMMAND test_grid_check WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
-
-add_custom_target(build_tests
-  DEPENDS test_grid_check
+target_compile_features(sudoku_solver_args PUBLIC cxx_std_17) # for std::optional
+target_link_libraries(sudoku_solver_args
+  PRIVATE foonathan::lexy::ext foonathan::lexy::core
 )
 
-add_custom_target(run_tests
-  COMMAND ${CMAKE_CTEST_COMMAND} -C $<CONFIGURATION> --verbose
-  DEPENDS build_tests
+add_executable(sudoku_solver
+  src/sudoku_solver.cpp
 )
+target_link_libraries(sudoku_solver PRIVATE sudoku_solver_args sudoku_grid)
+
+add_subdirectory(test)
