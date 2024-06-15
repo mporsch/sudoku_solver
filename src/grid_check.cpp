@@ -8,52 +8,34 @@
 
 namespace {
 
-auto FieldRowRange(Grid::const_iterator it, const Grid& grid)
-{
-  auto first = make_custom_step_iterator(it, grid.offsetOf<0>());
-  auto last = std::next(first, grid.height());
-  return std::make_pair(
-    make_preserve_iterator(first),
-    make_preserve_iterator(last));
-}
-
-auto FieldRowColRange(Grid::const_iterator it, const Grid& grid)
-{
-  return std::make_pair(it, std::next(it, grid.width()));
-}
-
-auto FieldColRange(Grid::const_iterator it, const Grid& grid)
+template<typename FwdId>
+auto PreserveRange(std::pair<FwdId, FwdId> range)
 {
   return std::make_pair(
-    make_preserve_iterator(it),
-    make_preserve_iterator(std::next(it, grid.width())));
+    make_preserve_iterator(range.first),
+    make_preserve_iterator(range.second));
 }
 
-auto FieldColRowRange(Grid::const_iterator it, const Grid& grid)
+template<size_t Step>
+auto RowRange(Grid::const_iterator it, const Grid& grid)
 {
-  auto first = make_custom_step_iterator(it, grid.offsetOf<0>());
-  auto last = std::next(first, grid.height());
+  auto first = make_custom_step_iterator(it, grid.offsetOf<0>() * Step);
+  auto last = std::next(first, grid.height() / Step);
   return std::make_pair(first, last);
 }
 
-auto BlockRowRange(Grid::const_iterator it, const Grid& grid)
+template<size_t Step>
+auto ColRange(Grid::const_iterator it, const Grid& grid)
 {
-  auto first = make_custom_step_iterator(it,
-    grid.offsetOf<0>() * Grid::BlockSize);
-  auto last = std::next(first, grid.height() / Grid::BlockSize);
-  return std::make_pair(
-    make_preserve_iterator(first),
-    make_preserve_iterator(last));
+  auto first = make_custom_step_iterator(it, Step);
+  auto last = std::next(first, grid.width() / Step);
+  return std::make_pair(first, last);
 }
 
-auto BlockRowColRange(Grid::const_iterator it, const Grid& grid)
-{
-  auto first = make_custom_step_iterator(it, Grid::BlockSize);
-  auto last = std::next(first, grid.width() / Grid::BlockSize);
-  return std::make_pair(
-    make_preserve_iterator(first),
-    make_preserve_iterator(last));
-}
+constexpr auto FieldRowRange = RowRange<1>;
+constexpr auto FieldColRange = ColRange<1>;
+constexpr auto BlockRowRange = RowRange<Grid::BlockSize>;
+constexpr auto BlockColRange = ColRange<Grid::BlockSize>;
 
 auto BlockFieldsRange(Grid::const_iterator it, const Grid& grid)
 {
@@ -107,16 +89,24 @@ struct Checker
     Fs&&... getNextRanges) const
   {
     return CheckRange(
-      getRange(it, grid),
+      PreserveRange(getRange(it, grid)),
       std::forward<Fs>(getNextRanges)...);
+  }
+
+  template<typename FwdId, typename F>
+  bool Check(
+    FwdId it,
+    F&& getRange) const
+  {
+    return CheckRange(getRange(it, grid));
   }
 
   operator bool() const
   {
     return true
-    && Check(grid.begin(), FieldRowRange, FieldRowColRange)
-    && Check(grid.begin(), FieldColRange, FieldColRowRange)
-    && Check(grid.begin(), BlockRowRange, BlockRowColRange, BlockFieldsRange);
+    && Check(grid.begin(), FieldRowRange, FieldColRange) // field rows
+    && Check(grid.begin(), FieldColRange, FieldRowRange) // field columns
+    && Check(grid.begin(), BlockRowRange, BlockColRange, BlockFieldsRange); // blocks by row and column
   }
 };
 
