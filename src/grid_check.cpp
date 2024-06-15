@@ -26,13 +26,13 @@ auto FieldColRange(Grid::const_iterator it, const Grid& grid)
 {
   return std::make_pair(
     make_preserve_iterator(it),
-    make_preserve_iterator(std::next(it, grid.offsetOf<0>())));
+    make_preserve_iterator(std::next(it, grid.width())));
 }
 
 auto FieldColRowRange(Grid::const_iterator it, const Grid& grid)
 {
   auto first = make_custom_step_iterator(it, grid.offsetOf<0>());
-  auto last = std::next(first, 1);
+  auto last = std::next(first, grid.height());
   return std::make_pair(first, last);
 }
 
@@ -49,7 +49,7 @@ auto BlockRowRange(Grid::const_iterator it, const Grid& grid)
 auto BlockRowColRange(Grid::const_iterator it, const Grid& grid)
 {
   auto first = make_custom_step_iterator(it, Grid::BlockSize);
-  auto last = std::next(first, grid.offsetOf<0>() / Grid::BlockSize);
+  auto last = std::next(first, grid.width() / Grid::BlockSize);
   return std::make_pair(
     make_preserve_iterator(first),
     make_preserve_iterator(last));

@@ -1,9 +1,12 @@
 #pragma once
 
+#include <cassert>
+
 template<typename wrapped_iterator>
 struct custom_step_iterator : wrapped_iterator
 {
-  using difference_type = typename wrapped_iterator::difference_type;
+  using typename wrapped_iterator::difference_type;
+  using typename wrapped_iterator::reference;
 
   difference_type step;
 
@@ -58,6 +61,20 @@ struct custom_step_iterator : wrapped_iterator
   wrapped_iterator operator-(difference_type n) const noexcept
   {
     return wrapped_iterator(base() - step * n, step);
+  }
+
+  reference operator[](difference_type n) const noexcept
+  {
+    return base()[step * n];
+  }
+
+  friend difference_type operator-(
+    const custom_step_iterator& lhs,
+    const custom_step_iterator& rhs) noexcept
+  {
+    auto diff = lhs.base() - rhs.base();
+    assert((lhs.step == rhs.step) && (diff % lhs.step == 0));
+    return diff / lhs.step;
   }
 };
 

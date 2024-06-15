@@ -7,7 +7,7 @@ template<typename wrapped_iterator>
 struct dance_dance_iterator : wrapped_iterator
 {
   using iterator_category = std::bidirectional_iterator_tag;
-  using difference_type = typename wrapped_iterator::difference_type;
+  using typename wrapped_iterator::difference_type;
 
   std::deque<difference_type> steps;
 
@@ -47,8 +47,8 @@ struct dance_dance_iterator : wrapped_iterator
     const dance_dance_iterator& rhs) noexcept
   {
     return false
-    ||  (lhs.base() != rhs.base())
-    ||  (lhs.steps != rhs.steps);
+    || (lhs.base() != rhs.base())
+    || (lhs.steps != rhs.steps);
   }
 
 private:
