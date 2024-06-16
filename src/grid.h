@@ -10,6 +10,16 @@ struct Field
 
   value_type num;
 
+  Field()
+  : num(undef)
+  {
+  }
+
+  Field(value_type num)
+  : num(num)
+  {
+  }
+
   friend bool operator==(const Field& lhs, const Field& rhs) noexcept
   {
     return lhs.num == rhs.num;
@@ -29,6 +39,11 @@ struct Grid : public hypervector<Field, 2> // row-major; width, height always in
 
   Grid(size_t height, size_t width)
     : hypervector<Field, 2>(height * BlockSize, width * BlockSize)
+  {
+  }
+
+  Grid(std::initializer_list<Field> init)
+    : hypervector<Field, 2>(std::move(init))
   {
   }
 
