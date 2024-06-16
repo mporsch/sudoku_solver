@@ -42,7 +42,7 @@ struct Grid : public hypervector<Field, 2> // row-major; width, height always in
   {
   }
 
-  Grid(std::initializer_list<Field> init)
+  Grid(std::initializer_list<std::initializer_list<Field>> init)
     : hypervector<Field, 2>(std::move(init))
   {
   }
