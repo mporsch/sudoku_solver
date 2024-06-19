@@ -2,6 +2,7 @@
 
 #include <cassert>
 
+// TODO past-the-'past-the-end' iterators are considered UB
 template<typename wrapped_iterator>
 struct custom_step_iterator : wrapped_iterator
 {
