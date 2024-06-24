@@ -12,17 +12,14 @@ add_library(sudoku_grid
   src/grid_check.cpp
   src/grid_parse.cpp
   src/grid_print.cpp
-  src/custom_step_iterator.h
-  src/dance_dance_iterator.h
   src/grid.h
   src/grid_check.h
   src/grid_check_impl.h
   src/grid_parse.h
   src/grid_print.h
-  src/preserve_iterator.h
 )
 target_include_directories(sudoku_grid PUBLIC src)
-target_compile_features(sudoku_grid PUBLIC cxx_std_17) # for some radical type deduction?
+target_compile_features(sudoku_grid PUBLIC cxx_std_23) # for std::views::stride
 target_link_libraries(sudoku_grid
   PUBLIC hypervector
   PRIVATE foonathan::lexy::ext foonathan::lexy::core
