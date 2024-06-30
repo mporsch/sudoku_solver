@@ -30,7 +30,11 @@ Grid ParseGrid(std::istream& is)
 int ProcessGrid(Grid grid)
 {
   if(grid.size()) {
-    std::cerr << "\nParsed grid:\n\n";
+    std::cerr
+      << "\nParsed grid:"
+      << ' ' << grid.width() << 'x' << grid.height()
+      << ',' << grid.blockWidth << 'x' << grid.blockHeight
+      << "\n\n";
     std::cout << grid << "\n";
 
     std::cerr << "Is " << (IsSolved(grid) ? "" : "not ") << "solved\n\n";

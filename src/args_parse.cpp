@@ -15,7 +15,7 @@ namespace dsl = lexy::dsl;
 
 Args::Template MakeTemplate(lexy::nullopt)
 {
-  return Args::Template{3, 3};
+  return Args::Template{9, 9};
 }
 Args::Template MakeTemplate(Args::Template::value_type width, lexy::nullopt)
 {

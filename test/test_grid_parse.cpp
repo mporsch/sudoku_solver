@@ -32,6 +32,29 @@ R"(+~~~+~~~+~~~+~~~+~~~+~~~+~~~+~~~+~~~+
   return grid;
 }
 
+Grid ParseGrid6x6_3x2()
+{
+  auto iss = std::istringstream(
+R"(+~~~+~~~+~~~+~~~+~~~+~~~+
+| 1 : 2 : 6 | 3 : 4 : 5 |
++---+---+---+---+---+---+
+| 5 : 3 : 4 | 2 : 1 : 6 |
++~~~+~~~+~~~+~~~+~~~+~~~+
+| 6 : 4 : 1 | 5 : 3 : 2 |
++---+---+---+---+---+---+
+| 2 : 5 : 3 | 4 : 6 : 1 |
++~~~+~~~+~~~+~~~+~~~+~~~+
+| 3 : 1 : 5 | 6 : 2 : 4 |
++---+---+---+---+---+---+
+| 4 : 6 : 2 | 1 : 5 : 3 |
++~~~+~~~+~~~+~~~+~~~+~~~+)"
+  );
+
+  Grid grid;
+  iss >> grid;
+  return grid;
+}
+
 Grid ReferenceGrid()
 {
   return Grid{
@@ -46,7 +69,21 @@ Grid ReferenceGrid()
     {3, 4, 5, 2, 8, 6, 1, 7, 9}};
 }
 
+Grid ReferenceGrid6x6_3x2()
+{
+  return Grid{
+    {1, 2, 6, 3, 4, 5},
+    {5, 3, 4, 2, 1, 6},
+    {6, 4, 1, 5, 3, 2},
+    {2, 5, 3, 4, 6, 1},
+    {3, 1, 5, 6, 2, 4},
+    {4, 6, 2, 1, 5, 3}};
+}
+
 int main()
 {
-  return (ParseGrid() == ReferenceGrid() ? EXIT_SUCCESS : EXIT_FAILURE);
+  return (true
+  && (ParseGrid() == ReferenceGrid())
+  && (ParseGrid6x6_3x2() == ReferenceGrid6x6_3x2())
+  ? EXIT_SUCCESS : EXIT_FAILURE);
 }

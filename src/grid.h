@@ -31,19 +31,24 @@ struct Field
   }
 };
 
-struct Grid : public hypervector<Field, 2> // row-major; width, height always in multiples of 3
+struct Grid : public hypervector<Field, 2> // row-major
 {
-  static constexpr size_t BlockSize = 3;
+  size_t blockHeight = 0;
+  size_t blockWidth = 0;
 
   Grid() = default;
 
   Grid(size_t height, size_t width)
-    : hypervector<Field, 2>(height * BlockSize, width * BlockSize)
+    : hypervector<Field, 2>(height, width)
+    , blockHeight(3)
+    , blockWidth(3)
   {
   }
 
   Grid(std::initializer_list<std::initializer_list<Field>> init)
     : hypervector<Field, 2>(std::move(init))
+    , blockHeight(3)
+    , blockWidth(3)
   {
   }
 

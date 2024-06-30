@@ -12,7 +12,7 @@ Grid::container ToGridContainer(std::ranges::viewable_range auto&& r)
   }
 
   Grid::container c;
-  c.reserve(Grid::BlockSize * Grid::BlockSize);
+  c.reserve(9); // reasonable size assumption
   for(auto&&f : r) {
     c.push_back(f);
   }
@@ -23,21 +23,21 @@ Grid::container ToGridContainer(std::ranges::viewable_range auto&& r)
 // it can be replaced in the test of the layered ranges
 struct CheckUnique
 {
-  bool operator()(Grid::container sorted) const
+  bool operator()(Grid::container group) const
   {
-    std::sort(begin(sorted), end(sorted));
+    std::sort(begin(group), end(group));
 
-    if(sorted.front().num == Field::undef) {
+    if(group.front().num == Field::undef) {
       return false;
     }
-    if(std::unique(begin(sorted), end(sorted)) != end(sorted)) {
+    if(std::unique(begin(group), end(group)) != end(group)) {
       return false;
     }
     return true;
   }
 };
 
-template<typename CheckFields = CheckUnique>
+template<typename CheckGroup = CheckUnique>
 struct Checker
 {
   const Grid& grid;
@@ -48,7 +48,7 @@ struct Checker
     && std::ranges::all_of( // field rows
       std::views::iota(0U, grid.height()),
       [&](size_t row) {
-        return CheckFields()(ToGridContainer(
+        return CheckGroup()(ToGridContainer(
           grid
           | std::views::drop(row * grid.offsetOf<0>())
           | std::views::take(grid.width())
@@ -58,7 +58,7 @@ struct Checker
     && std::ranges::all_of( // field columns
       std::views::iota(0U, grid.width()),
       [&](size_t col) {
-        return CheckFields()(ToGridContainer(
+        return CheckGroup()(ToGridContainer(
           grid
           | std::views::drop(col)
           | std::views::stride(grid.offsetOf<0>())
@@ -66,17 +66,17 @@ struct Checker
       }
     )
     && std::ranges::all_of( // block rows
-      std::views::iota(0U, grid.height() / Grid::BlockSize),
+      std::views::iota(0U, grid.height() / grid.blockHeight),
       [&](size_t row) {
         return std::ranges::all_of( // block columns
-          std::views::iota(0U, grid.width() / Grid::BlockSize),
+          std::views::iota(0U, grid.width() / grid.blockWidth),
           [&](size_t col) {
-            return CheckFields()(ToGridContainer(
+            return CheckGroup()(ToGridContainer(
               grid // blocks by row and column
-              | std::views::drop((row * grid.offsetOf<0>() + col) * Grid::BlockSize)
-              | std::views::slide(Grid::BlockSize)
+              | std::views::drop(row * grid.offsetOf<0>() * grid.blockHeight + col * grid.blockWidth)
+              | std::views::slide(grid.blockWidth)
               | std::views::stride(grid.offsetOf<0>())
-              | std::views::take(Grid::BlockSize)
+              | std::views::take(grid.blockHeight)
               | std::views::join
             ));
           }

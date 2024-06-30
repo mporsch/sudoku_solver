@@ -21,20 +21,17 @@ Field MakeField(lexy::nullopt)
   return Field{Field::undef};
 }
 
-Field MakeField(Field::value_type num)
+Field MakeField(lexy::lexeme<lexy::_prd> num)
 {
-  if(num >= 10) {
-    throw std::invalid_argument("out of range");
-  }
-  return Field{num};
+  return Field{static_cast<Field::value_type>(*num.begin() - 48)}; // downshift from ASCII to integer
 }
 
 struct production
 {
   struct field
   {
-    // try to parse an integer value; produce lexy::nullopt on failure
-    static constexpr auto rule = dsl::opt(dsl::integer<Field::value_type>);
+    // try to parse a character value; produce lexy::nullopt on failure
+    static constexpr auto rule = dsl::opt(dsl::identifier(dsl::ascii::alnum));
 
     // dispatch to the appropriate constructor
     static constexpr auto value = lexy::callback<Field>([](auto&&... args) { return MakeField(args...); });
@@ -77,6 +74,63 @@ struct production
   static constexpr auto value = lexy::as_list<std::vector<std::vector<Field>>>;
 };
 
+bool parse_field_line(Grid& grid, const std::string& str)
+{
+  auto input = lexy::string_input(str);
+  if(auto parsed = lexy::parse<production>(input, lexy_ext::report_error); parsed.has_value()) {
+    if(auto blocks = parsed.value(); !blocks.empty()) {
+      auto fields_width = std::accumulate(
+        begin(blocks), end(blocks),
+        0U,
+        [](size_t sum, auto&& block) {
+          return sum + block.size();
+        });
+
+      if(auto current_width = grid.width()) {
+        if(current_width != fields_width) {
+          throw std::invalid_argument("unequal width of grid fields");
+        }
+      }
+
+      auto block_width = blocks.front().size();
+      if(grid.blockWidth) {
+        if(grid.blockWidth != block_width) {
+          throw std::invalid_argument("unequal width of grid blocks");
+        }
+      } else {
+        grid.blockWidth = block_width;
+      }
+
+      auto current_height = grid.height();
+      grid.resize(current_height + 1, fields_width);
+      auto current_row = grid[current_height];
+      auto pos = current_row.begin();
+      for(auto&& block : blocks) {
+        pos = std::copy(begin(block), end(block), pos);
+      }
+
+      return true;
+    }
+  }
+  return false;
+}
+
+bool parse_block_height(Grid& grid, const std::string& str)
+{
+  if(auto grid_height = grid.height()) {
+    if(str.starts_with("+~")) { // block border line
+      if(grid.blockHeight) {
+        if(grid_height % grid.blockHeight != 0) {
+          throw std::invalid_argument("unequal height of grid blocks");
+        }
+      } else {
+        grid.blockHeight = grid_height;
+      }
+    }
+  }
+  return true;
+}
+
 } // namespace anonymous
 
 std::istream& operator>>(std::istream& is, Grid& grid)
@@ -86,31 +140,7 @@ std::istream& operator>>(std::istream& is, Grid& grid)
 
   std::string str;
   while(std::getline(is, str)) {
-    auto input = lexy::string_input(str);
-    if(auto parsed = lexy::parse<production>(input, lexy_ext::report_error); parsed.has_value()) {
-      if(auto blocks = parsed.value(); !blocks.empty()) {
-        auto fields_width = std::accumulate(
-          begin(blocks), end(blocks),
-          0U,
-          [](size_t sum, auto&& block) {
-            return sum + block.size();
-          });
-
-        if(auto current_width = grid.width()) {
-          if(current_width != fields_width) {
-            throw std::invalid_argument("unequal width of grid lines");
-          }
-        }
-
-        auto current_height = grid.height();
-        grid.resize(current_height + 1, fields_width);
-        auto current_row = grid[current_height];
-        auto pos = current_row.begin();
-        for(auto&& block : blocks) {
-          pos = std::copy(begin(block), end(block), pos);
-        }
-      }
-    }
+    parse_field_line(grid, str) || parse_block_height(grid, str);
   }
   return is;
 }
