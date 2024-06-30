@@ -4,7 +4,7 @@
 
 struct Field
 {
-  using value_type = unsigned char;
+  using value_type = char;
 
   static constexpr value_type undef = 0;
 
@@ -50,6 +50,11 @@ struct Grid : public hypervector<Field, 2> // row-major
     , blockHeight(3)
     , blockWidth(3)
   {
+    for(auto&& f : *this) {
+      if(f.num) {
+        f.num += 48; // upshift from integer to ASCII
+      }
+    }
   }
 
   size_t height() const

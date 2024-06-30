@@ -19,6 +19,13 @@ struct CheckExpected
 
     auto group = std::move(groups.front());
     groups.pop_front();
+
+    for(auto&& f : group) {
+      if(f.num) {
+        f.num += 48; // upshift from integer to ASCII
+      }
+    }
+
     return group;
   }
 };

@@ -23,7 +23,7 @@ Field MakeField(lexy::nullopt)
 
 Field MakeField(lexy::lexeme<lexy::_prd> num)
 {
-  return Field{static_cast<Field::value_type>(*num.begin() - 48)}; // downshift from ASCII to integer
+  return Field{*num.begin()};
 }
 
 struct production
