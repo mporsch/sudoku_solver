@@ -42,20 +42,23 @@ struct Checker
 {
   const Grid& grid;
 
-  operator bool() const
+  bool CheckFieldRows() const
   {
-    return true
-    && std::ranges::all_of( // field rows
+    return std::ranges::all_of(
       std::views::iota(0U, grid.height()),
       [&](size_t row) {
         return CheckGroup()(ToGridContainer(
           grid
-          | std::views::drop(row * grid.offsetOf<0>())
+          | std::views::drop(grid.offsetOf(row, 0))
           | std::views::take(grid.width())
         ));
       }
-    )
-    && std::ranges::all_of( // field columns
+    );
+  }
+
+  bool CheckFieldColumns() const
+  {
+    return std::ranges::all_of(
       std::views::iota(0U, grid.width()),
       [&](size_t col) {
         return CheckGroup()(ToGridContainer(
@@ -64,16 +67,20 @@ struct Checker
           | std::views::stride(grid.offsetOf<0>())
         ));
       }
-    )
-    && std::ranges::all_of( // block rows
+    );
+  }
+
+  bool CheckBlocks() const
+  {
+    return std::ranges::all_of( // block rows
       std::views::iota(0U, grid.height() / grid.blockHeight),
       [&](size_t row) {
         return std::ranges::all_of( // block columns
           std::views::iota(0U, grid.width() / grid.blockWidth),
           [&](size_t col) {
             return CheckGroup()(ToGridContainer(
-              grid // blocks by row and column
-              | std::views::drop(row * grid.offsetOf<0>() * grid.blockHeight + col * grid.blockWidth)
+              grid // block by row and column
+              | std::views::drop(grid.offsetOf(row * grid.blockHeight, col * grid.blockWidth))
               | std::views::slide(grid.blockWidth)
               | std::views::stride(grid.offsetOf<0>())
               | std::views::take(grid.blockHeight)
@@ -83,5 +90,13 @@ struct Checker
         );
       }
     );
+  }
+
+  operator bool() const
+  {
+    return true
+    && CheckFieldRows()
+    && CheckFieldColumns()
+    && CheckBlocks();
   }
 };
