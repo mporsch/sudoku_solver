@@ -7,8 +7,17 @@ target_link_libraries(test_grid_check PRIVATE sudoku_grid)
 enable_testing()
 add_test(NAME test_grid_parse COMMAND test_grid_parse)
 add_test(NAME test_grid_check COMMAND test_grid_check)
-add_test(NAME sudoku_solver_reference COMMAND sudoku_solver reference.txt WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
-add_test(NAME sudoku_solver_reference_solved COMMAND sudoku_solver reference_solved.txt WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+
+set(test_files
+  reference.txt
+  reference_solved.txt
+  reference_6x6,3x2.txt
+  reference_6x6,3x2_solved.txt
+  reference_12x12,4x3.txt
+)
+foreach(test_file ${test_files})
+  add_test(NAME "sudoku_solver:${test_file}" COMMAND sudoku_solver "${test_file}" WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+endforeach()
 
 add_custom_target(build_tests DEPENDS
   test_grid_parse
