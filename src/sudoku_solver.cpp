@@ -14,9 +14,15 @@ int PrintUsage(std::ostream& os, const char* name, int code = EXIT_SUCCESS)
   return code;
 }
 
-int PrintTemplate(unsigned w, unsigned h)
+int PrintTemplate(const Args::Template& templ)
 {
-  std::cout << Grid(h, w) << std::endl;
+  auto grid = Grid(templ.height, templ.width, templ.blockHeight, templ.blockWidth);
+  std::cerr
+    << "Grid:"
+    << ' ' << grid.width() << 'x' << grid.height()
+    << ',' << grid.blockWidth << 'x' << grid.blockHeight
+    << "\n\n";
+  std::cout << grid << std::endl;
   return EXIT_SUCCESS;
 }
 
@@ -53,7 +59,7 @@ int main(int argc, char** argv)
       return PrintUsage(std::cout, argv[0]);
     }
     if(args.templ) {
-      return PrintTemplate(args.templ->width, args.templ->height);
+      return PrintTemplate(*args.templ);
     }
     if(args.stdinput) {
       std::cerr << "\nPaste grid and end input with Ctrl-D / Ctrl-Z+Enter:\n\n";

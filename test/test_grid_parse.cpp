@@ -57,7 +57,7 @@ R"(+~~~+~~~+~~~+~~~+~~~+~~~+
 
 Grid ReferenceGrid()
 {
-  return Grid{
+  auto grid = Grid{
     {5, 3, 4, 6, 7, 8, 9, 1, 2},
     {6, 7, 2, 1, 9, 5, 3, 4, 8},
     {1, 9, 8, 3, 4, 2, 5, 6, 7},
@@ -67,17 +67,23 @@ Grid ReferenceGrid()
     {9, 6, 1, 5, 3, 7, 2, 8, 4},
     {2, 8, 7, 4, 1, 9, 6, 3, 5},
     {3, 4, 5, 2, 8, 6, 1, 7, 9}};
+  grid.blockWidth = 3;
+  grid.blockHeight = 3;
+  return grid;
 }
 
 Grid ReferenceGrid6x6_3x2()
 {
-  return Grid{
+  auto grid = Grid{
     {1, 2, 6, 3, 4, 5},
     {5, 3, 4, 2, 1, 6},
     {6, 4, 1, 5, 3, 2},
     {2, 5, 3, 4, 6, 1},
     {3, 1, 5, 6, 2, 4},
     {4, 6, 2, 1, 5, 3}};
+  grid.blockWidth = 3;
+  grid.blockHeight = 2;
+  return grid;
 }
 
 int main()

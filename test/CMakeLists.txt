@@ -8,15 +8,22 @@ enable_testing()
 add_test(NAME test_grid_parse COMMAND test_grid_parse)
 add_test(NAME test_grid_check COMMAND test_grid_check)
 
-set(test_files
+set(test_args
+  --template
+  --template=2
+  --template=2x3
+  --template=2,2
+  --template=2x3,2
+  --template=2,2x2
+  --template=2x3,2x3
   reference.txt
   reference_solved.txt
   reference_6x6,3x2.txt
   reference_6x6,3x2_solved.txt
   reference_12x12,4x3.txt
 )
-foreach(test_file ${test_files})
-  add_test(NAME "sudoku_solver:${test_file}" COMMAND sudoku_solver "${test_file}" WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+foreach(test_arg ${test_args})
+  add_test(NAME "sudoku_solver:${test_arg}" COMMAND sudoku_solver "${test_arg}" WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
 endforeach()
 
 add_custom_target(build_tests DEPENDS

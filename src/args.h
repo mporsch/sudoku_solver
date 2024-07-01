@@ -11,6 +11,8 @@ struct Args
 
     value_type width;
     value_type height;
+    value_type blockWidth;
+    value_type blockHeight;
   };
 
   bool help = false;

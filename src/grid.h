@@ -38,10 +38,11 @@ struct Grid : public hypervector<Field, 2> // row-major
 
   Grid() = default;
 
-  Grid(size_t height, size_t width)
+  Grid(size_t height, size_t width,
+       size_t blockHeight, size_t blockWidth)
     : hypervector<Field, 2>(height, width)
-    , blockHeight(3)
-    , blockWidth(3)
+    , blockHeight(blockHeight)
+    , blockWidth(blockWidth)
   {
   }
 
@@ -65,5 +66,13 @@ struct Grid : public hypervector<Field, 2> // row-major
   size_t width() const
   {
     return sizeOf<1>();
+  }
+
+  friend bool operator==(const Grid& lhs, const Grid& rhs) noexcept
+  {
+    return true
+    && (static_cast<const hypervector<Field, 2>&>(lhs) == static_cast<const hypervector<Field, 2>&>(rhs))
+    && (lhs.blockHeight == rhs.blockHeight)
+    && (lhs.blockWidth == rhs.blockWidth);
   }
 };
