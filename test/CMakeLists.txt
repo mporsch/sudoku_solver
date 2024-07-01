@@ -1,8 +1,8 @@
 add_executable(test_grid_parse test_grid_parse.cpp)
-target_link_libraries(test_grid_parse PRIVATE sudoku_grid)
+target_link_libraries(test_grid_parse PRIVATE sudoku_grid_io)
 
 add_executable(test_grid_check test_grid_check.cpp)
-target_link_libraries(test_grid_check PRIVATE sudoku_grid)
+target_link_libraries(test_grid_check PRIVATE sudoku_grid_check_impl)
 
 enable_testing()
 add_test(NAME test_grid_parse COMMAND test_grid_parse)

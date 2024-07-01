@@ -8,21 +8,40 @@ include(FetchContent)
 FetchContent_Declare(lexy URL https://github.com/foonathan/lexy/releases/download/v2022.12.1/lexy-src.zip)
 FetchContent_MakeAvailable(lexy)
 
-add_library(sudoku_grid
-  src/grid_check.cpp
+add_library(sudoku_grid INTERFACE
+  src/grid.h
+)
+target_include_directories(sudoku_grid INTERFACE src)
+target_link_libraries(sudoku_grid
+  INTERFACE hypervector
+)
+
+add_library(sudoku_grid_io
   src/grid_parse.cpp
   src/grid_print.cpp
-  src/grid.h
-  src/grid_check.h
-  src/grid_check_impl.h
   src/grid_parse.h
   src/grid_print.h
 )
-target_include_directories(sudoku_grid PUBLIC src)
-target_compile_features(sudoku_grid PUBLIC cxx_std_23) # for std::views::stride
-target_link_libraries(sudoku_grid
-  PUBLIC hypervector
+target_link_libraries(sudoku_grid_io
+  PUBLIC sudoku_grid
   PRIVATE foonathan::lexy::ext foonathan::lexy::core
+)
+
+add_library(sudoku_grid_check_impl INTERFACE
+  src/grid_check_impl.h
+)
+target_compile_features(sudoku_grid INTERFACE cxx_std_23) # for std::views::stride
+target_link_libraries(sudoku_grid_check_impl
+  INTERFACE sudoku_grid
+)
+
+add_library(sudoku_grid_check
+  src/grid_check.cpp
+  src/grid_check.h
+)
+target_link_libraries(sudoku_grid_check
+  PUBLIC sudoku_grid
+  PRIVATE sudoku_grid_check_impl
 )
 
 add_library(sudoku_solver_args
@@ -38,6 +57,8 @@ target_link_libraries(sudoku_solver_args
 add_executable(sudoku_solver
   src/sudoku_solver.cpp
 )
-target_link_libraries(sudoku_solver PRIVATE sudoku_solver_args sudoku_grid)
+target_link_libraries(sudoku_solver
+  PRIVATE sudoku_solver_args sudoku_grid_check sudoku_grid_io
+)
 
 add_subdirectory(test)
