@@ -43,9 +43,14 @@ int ProcessGrid(Grid grid)
       << "\n\n";
     std::cout << grid << "\n";
 
-    std::cerr << "Is " << (IsSolved(grid) ? "" : "not ") << "solved\n\n";
+    if(true
+    && (grid.width() % grid.blockWidth == 0)
+    && (grid.height() % grid.blockHeight == 0)) {
+      std::cerr << "Is " << (IsSolved(grid) ? "" : "not ") << "solved\n\n";
 
-    return EXIT_SUCCESS;
+      return EXIT_SUCCESS;
+    }
+    std::cerr << "\nInvalid block size for grid\n\n";
   }
   std::cerr << "\nFailed to parse grid\n\n";
   return EXIT_FAILURE;
