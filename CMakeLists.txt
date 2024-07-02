@@ -30,7 +30,7 @@ target_link_libraries(sudoku_grid_io
 add_library(sudoku_grid_check_impl INTERFACE
   src/grid_check_impl.h
 )
-target_compile_features(sudoku_grid INTERFACE cxx_std_23) # for std::views::stride
+target_compile_features(sudoku_grid_check_impl INTERFACE cxx_std_23) # for std::views::stride
 target_link_libraries(sudoku_grid_check_impl
   INTERFACE sudoku_grid
 )
