@@ -48,11 +48,12 @@ IsSolved Solve(Grid grid, const Alphabet& alphabet)
       break;
   }
 
-  if(auto pos = std::find(grid.begin(), grid.end(), Field()); pos != grid.end()) {
+  auto copy = grid;
+  if(auto pos = std::find(copy.begin(), copy.end(), Field()); pos != copy.end()) {
     for(auto&& f : alphabet) {
       *pos = f;
 
-      switch(auto isSolved = Solve(grid, alphabet)) {
+      switch(auto isSolved = Solve(copy, alphabet)) {
         case IsSolved::Yes:
           return isSolved;
         default:
