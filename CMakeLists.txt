@@ -44,6 +44,15 @@ target_link_libraries(sudoku_grid_check
   PRIVATE sudoku_grid_check_impl
 )
 
+add_library(sudoku_grid_solve
+  src/grid_solve.cpp
+  src/grid_solve.h
+)
+target_link_libraries(sudoku_grid_solve
+  PUBLIC sudoku_grid_check
+  PRIVATE sudoku_grid_io
+)
+
 add_library(sudoku_solver_args
   src/args_parse.cpp
   src/args.h
