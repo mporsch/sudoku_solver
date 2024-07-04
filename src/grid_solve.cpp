@@ -2,6 +2,7 @@
 #include "grid_print.h"
 
 #include <algorithm>
+#include <iostream>
 #include <stdexcept>
 
 namespace {
@@ -39,7 +40,7 @@ IsSolved Solve(Grid grid, const Alphabet& alphabet)
 {
   switch(auto isSolved = Check(grid)) {
     case IsSolved::Yes:
-      std::cout << grid << "\n\n";
+      std::cout << grid;
       [[fallthrough]];
     case IsSolved::Never:
       return isSolved;

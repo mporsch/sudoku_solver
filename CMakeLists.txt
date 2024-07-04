@@ -67,7 +67,7 @@ add_executable(sudoku_solver
   src/sudoku_solver.cpp
 )
 target_link_libraries(sudoku_solver
-  PRIVATE sudoku_solver_args sudoku_grid_check sudoku_grid_io
+  PRIVATE sudoku_solver_args sudoku_grid_solve sudoku_grid_io
 )
 
 add_subdirectory(test)

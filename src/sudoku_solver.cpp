@@ -1,8 +1,8 @@
 #include "args_parse.h"
 #include "grid.h"
-#include "grid_check.h"
 #include "grid_parse.h"
 #include "grid_print.h"
+#include "grid_solve.h"
 
 #include <cstdlib>
 #include <fstream>
@@ -35,25 +35,34 @@ Grid ParseGrid(std::istream& is)
 
 int ProcessGrid(Grid grid)
 {
-  if(grid.size()) {
-    std::cerr
-      << "\nParsed grid:"
-      << ' ' << grid.width() << 'x' << grid.height()
-      << ',' << grid.blockWidth << 'x' << grid.blockHeight
-      << "\n\n";
-    std::cout << grid << "\n";
-
-    if(true
-    && (grid.width() % grid.blockWidth == 0)
-    && (grid.height() % grid.blockHeight == 0)) {
-      std::cerr << "Is " << (!!Check(grid) ? "" : "not ") << "solved\n\n";
-
-      return EXIT_SUCCESS;
-    }
-    std::cerr << "\nInvalid block size for grid\n\n";
+  if(!grid.size()) {
+    std::cerr << "\nFailed to parse grid\n\n";
+    return EXIT_FAILURE;
   }
-  std::cerr << "\nFailed to parse grid\n\n";
-  return EXIT_FAILURE;
+
+  if(false
+  || (grid.width() % grid.blockWidth != 0)
+  || (grid.height() % grid.blockHeight != 0)) {
+    std::cerr << "\nInvalid block size for grid\n\n";
+    return EXIT_FAILURE;
+  }
+
+  std::cerr
+    << "\nParsed grid:"
+    << ' ' << grid.width() << 'x' << grid.height()
+    << ',' << grid.blockWidth << 'x' << grid.blockHeight
+    << "\n\n"
+    << grid
+    << "\n\nSolving...\n\n";
+
+  switch(Solve(grid)) {
+    case IsSolved::Yes:
+      // was already printed to stdout on success
+      return EXIT_SUCCESS;
+    default:
+      std::cerr << "did not succeed\n";
+      return EXIT_FAILURE;
+  }
 }
 
 int main(int argc, char** argv)
