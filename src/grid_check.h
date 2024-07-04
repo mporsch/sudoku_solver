@@ -2,4 +2,13 @@
 
 #include "grid.h"
 
-bool IsSolved(const Grid&);
+enum class IsSolved
+{
+  NotYet,
+  Never,
+  Yes
+};
+
+bool operator!(IsSolved);
+
+IsSolved Check(const Grid&);

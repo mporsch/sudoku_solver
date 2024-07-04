@@ -1,6 +1,7 @@
 #pragma once
 
 #include "grid.h"
+#include "grid_check.h"
 
 #include <algorithm>
 #include <ranges>
@@ -23,17 +24,24 @@ Grid::container ToGridContainer(std::ranges::viewable_range auto&& r)
 // it can be replaced in the test of the layered ranges
 struct CheckUnique
 {
-  bool operator()(Grid::container group) const
+  IsSolved result = IsSolved::NotYet;
+
+  bool operator()(Grid::container group)
   {
     std::sort(begin(group), end(group));
 
-    if(group.front().num == Field::undef) {
-      return false;
+    // find where the empty fields end and the field values begin
+    auto mid = std::find_if(begin(group), end(group), [](const Field& f) { return f != Field(); });
+
+    if(std::unique(mid, end(group)) != end(group)) {
+      result = IsSolved::Never;
+    } else if(mid != begin(group)) {
+      result = IsSolved::NotYet;
+    } else {
+      result = IsSolved::Yes;
     }
-    if(std::unique(begin(group), end(group)) != end(group)) {
-      return false;
-    }
-    return true;
+
+    return !!result;
   }
 };
 
@@ -41,13 +49,14 @@ template<typename CheckGroup = CheckUnique>
 struct Checker
 {
   const Grid& grid;
+  CheckGroup check{};
 
-  bool CheckFieldRows() const
+  bool CheckFieldRows()
   {
     return std::ranges::all_of(
       std::views::iota(0U, grid.height()),
       [&](size_t row) {
-        return CheckGroup()(ToGridContainer(
+        return check(ToGridContainer(
           grid
           | std::views::drop(grid.offsetOf(row, 0))
           | std::views::take(grid.width())
@@ -56,12 +65,12 @@ struct Checker
     );
   }
 
-  bool CheckFieldColumns() const
+  bool CheckFieldColumns()
   {
     return std::ranges::all_of(
       std::views::iota(0U, grid.width()),
       [&](size_t col) {
-        return CheckGroup()(ToGridContainer(
+        return check(ToGridContainer(
           grid
           | std::views::drop(col)
           | std::views::stride(grid.offsetOf<0>())
@@ -70,7 +79,7 @@ struct Checker
     );
   }
 
-  bool CheckBlocks() const
+  bool CheckBlocks()
   {
     return std::ranges::all_of( // block rows
       std::views::iota(0U, grid.height() / grid.blockHeight),
@@ -78,7 +87,7 @@ struct Checker
         return std::ranges::all_of( // block columns
           std::views::iota(0U, grid.width() / grid.blockWidth),
           [&](size_t col) {
-            return CheckGroup()(ToGridContainer(
+            return check(ToGridContainer(
               grid // block by row and column
               | std::views::drop(grid.offsetOf(row * grid.blockHeight, col * grid.blockWidth))
               | std::views::slide(grid.blockWidth)
@@ -92,7 +101,7 @@ struct Checker
     );
   }
 
-  operator bool() const
+  operator bool()
   {
     return true
     && CheckFieldRows()

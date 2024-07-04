@@ -10,12 +10,12 @@ struct Field
 
   value_type num;
 
-  Field()
+  constexpr Field()
   : num(undef)
   {
   }
 
-  Field(value_type num)
+  constexpr Field(value_type num)
   : num(num)
   {
   }
@@ -23,6 +23,11 @@ struct Field
   friend bool operator==(const Field& lhs, const Field& rhs) noexcept
   {
     return lhs.num == rhs.num;
+  }
+
+  friend bool operator!=(const Field& lhs, const Field& rhs) noexcept
+  {
+    return lhs.num != rhs.num;
   }
 
   friend bool operator<(const Field& lhs, const Field& rhs) noexcept

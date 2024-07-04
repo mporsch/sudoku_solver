@@ -46,7 +46,7 @@ int ProcessGrid(Grid grid)
     if(true
     && (grid.width() % grid.blockWidth == 0)
     && (grid.height() % grid.blockHeight == 0)) {
-      std::cerr << "Is " << (IsSolved(grid) ? "" : "not ") << "solved\n\n";
+      std::cerr << "Is " << (!!Check(grid) ? "" : "not ") << "solved\n\n";
 
       return EXIT_SUCCESS;
     }
