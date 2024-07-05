@@ -37,7 +37,7 @@ Alphabet GetAlphabet(const Grid& grid)
   return fields;
 }
 
-IsSolved Solve(Grid grid, const Alphabet& alphabet)
+IsSolved Solve(const Grid &grid, const Alphabet& alphabet)
 {
   switch(auto isSolved = Check(grid)) {
     case IsSolved::Yes:
@@ -49,7 +49,9 @@ IsSolved Solve(Grid grid, const Alphabet& alphabet)
       break;
   }
 
+  // next up we will modify the grid so now is the time to copy
   auto copy = grid;
+
   if(auto pos = std::find(copy.begin(), copy.end(), Field()); pos != copy.end()) {
     for(auto&& f : alphabet) {
       *pos = f;
