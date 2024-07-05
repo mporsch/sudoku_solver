@@ -8,11 +8,12 @@
 
 namespace {
 
-using Alphabet = Grid::container;
+// i.e. the alphabet of the Sudoku; 1-9 in most cases but not necessarily
+using Elements = Grid::container;
 
-Alphabet GetAlphabet(const Grid& grid)
+Elements GetElements(const Grid& grid)
 {
-  auto fields = Alphabet(grid.begin(), grid.end());
+  auto fields = Elements(grid.begin(), grid.end());
   std::sort(begin(fields), end(fields));
 
   // trim empty fields
@@ -40,8 +41,9 @@ Alphabet GetAlphabet(const Grid& grid)
 IsSolved Solve(
   Grid &grid,
   Grid::iterator mid,
-  const Alphabet& alphabet)
+  const Elements& elements)
 {
+  // check if this branch is or can even be solved
   switch(auto isSolved = Check(grid)) {
     case IsSolved::Yes:
       std::cout << grid;
@@ -61,10 +63,12 @@ IsSolved Solve(
   // the next field to check is after the one just written
   auto next = std::next(mid);
 
-  for(auto&& f : alphabet) {
-    *mid = f;
+  for(auto&& field : elements) {
+    // try a candidate element
+    *mid = field;
 
-    switch(Solve(grid, next, alphabet)) {
+    // step into a branch based on this modification
+    switch(Solve(grid, next, elements)) {
       case IsSolved::Yes:
         return IsSolved::Yes;
       default:
@@ -81,7 +85,7 @@ IsSolved Solve(
 
 bool Solve(Grid grid)
 {
-  switch(Solve(grid, grid.begin(), GetAlphabet(grid))) {
+  switch(Solve(grid, grid.begin(), GetElements(grid))) {
     case IsSolved::Yes:
       return true;
     default:
