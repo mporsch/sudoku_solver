@@ -2,4 +2,4 @@
 
 #include "grid.h"
 
-bool Solve(const Grid&);
+bool Solve(Grid);
