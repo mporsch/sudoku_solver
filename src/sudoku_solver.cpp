@@ -55,14 +55,13 @@ int ProcessGrid(Grid grid)
     << grid
     << "\n\nSolving...\n\n";
 
-  switch(Solve(grid)) {
-    case IsSolved::Yes:
-      // was already printed to stdout on success
-      return EXIT_SUCCESS;
-    default:
-      std::cerr << "did not succeed\n";
-      return EXIT_FAILURE;
+  if(!Solve(grid)) {
+    std::cerr << "did not succeed\n";
+    return EXIT_FAILURE;
   }
+
+  // was already printed to stdout on success
+  return EXIT_SUCCESS;
 }
 
 int main(int argc, char** argv)

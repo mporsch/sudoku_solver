@@ -4,11 +4,9 @@
 
 enum class IsSolved
 {
+  Yes,
   NotYet,
-  Never,
-  Yes
+  Never
 };
-
-bool operator!(IsSolved);
 
 IsSolved Check(const Grid&);

@@ -24,7 +24,7 @@ set(test_args
   reference_solved.txt
   reference_4x4,2x2.txt
   reference_4x4,2x2_solved.txt
-#  reference_6x6,3x2.txt
+  reference_6x6,3x2.txt
   reference_6x6,3x2_solved.txt
 #  reference_12x12,4x3.txt
 )

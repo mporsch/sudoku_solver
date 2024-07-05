@@ -36,7 +36,7 @@ Grid ReferenceGrid6x6_3x2()
 int main(int, char**)
 {
   return (true
-  && !!Solve(ReferenceGrid())
-  && !!Solve(ReferenceGrid6x6_3x2())
+  && Solve(ReferenceGrid())
+  && Solve(ReferenceGrid6x6_3x2())
   ? EXIT_SUCCESS : EXIT_FAILURE);
 }

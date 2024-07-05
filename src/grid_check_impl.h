@@ -6,6 +6,8 @@
 #include <algorithm>
 #include <ranges>
 
+namespace grid_check_detail {
+
 Grid::container ToGridContainer(std::ranges::viewable_range auto&& r)
 {
   if constexpr(std::ranges::forward_range<decltype(r)>) {
@@ -20,13 +22,32 @@ Grid::container ToGridContainer(std::ranges::viewable_range auto&& r)
   return c;
 }
 
+inline IsSolved& operator|=(IsSolved& lhs, IsSolved rhs)
+{
+  if(lhs < rhs) {
+    lhs = rhs;
+  }
+  return lhs;
+}
+
+inline bool operator!(IsSolved e)
+{
+  switch(e) {
+    case IsSolved::Yes:
+    case IsSolved::NotYet: // keep on looking; we might encounter a Never
+      return false;
+    default:
+      return true;
+  }
+}
+
 // Sudoku check implemented as struct used as template parameter below so
 // it can be replaced in the test of the layered ranges
 struct CheckUnique
 {
-  IsSolved result = IsSolved::NotYet;
+  IsSolved result = IsSolved::Yes;
 
-  bool operator()(Grid::container group)
+  inline bool operator()(Grid::container group)
   {
     std::sort(begin(group), end(group));
 
@@ -34,18 +55,17 @@ struct CheckUnique
     auto mid = std::find_if(begin(group), end(group), [](const Field& f) { return f != Field(); });
 
     if(std::unique(mid, end(group)) != end(group)) {
-      result = IsSolved::Never;
+      result |= IsSolved::Never;
     } else if(mid != begin(group)) {
-      result = IsSolved::NotYet;
-    } else {
-      result = IsSolved::Yes;
+      result |= IsSolved::NotYet;
     }
-
     return !!result;
   }
 };
 
-template<typename CheckGroup = CheckUnique>
+} // namespace grid_check_detail
+
+template<typename CheckGroup = grid_check_detail::CheckUnique>
 struct Checker
 {
   const Grid& grid;
@@ -56,7 +76,7 @@ struct Checker
     return std::ranges::all_of(
       std::views::iota(0U, grid.height()),
       [&](size_t row) {
-        return check(ToGridContainer(
+        return check(grid_check_detail::ToGridContainer(
           grid
           | std::views::drop(grid.offsetOf(row, 0))
           | std::views::take(grid.width())
@@ -70,7 +90,7 @@ struct Checker
     return std::ranges::all_of(
       std::views::iota(0U, grid.width()),
       [&](size_t col) {
-        return check(ToGridContainer(
+        return check(grid_check_detail::ToGridContainer(
           grid
           | std::views::drop(col)
           | std::views::stride(grid.offsetOf<0>())
@@ -87,7 +107,7 @@ struct Checker
         return std::ranges::all_of( // block columns
           std::views::iota(0U, grid.width() / grid.blockWidth),
           [&](size_t col) {
-            return check(ToGridContainer(
+            return check(grid_check_detail::ToGridContainer(
               grid // block by row and column
               | std::views::drop(grid.offsetOf(row * grid.blockHeight, col * grid.blockWidth))
               | std::views::slide(grid.blockWidth)

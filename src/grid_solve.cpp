@@ -1,4 +1,5 @@
 #include "grid_solve.h"
+#include "grid_check.h"
 #include "grid_print.h"
 
 #include <algorithm>
@@ -66,7 +67,12 @@ IsSolved Solve(Grid grid, const Alphabet& alphabet)
 
 } // namespace anonymous
 
-IsSolved Solve(const Grid& grid)
+bool Solve(const Grid& grid)
 {
-  return Solve(grid, GetAlphabet(grid));
+  switch(Solve(grid, GetAlphabet(grid))) {
+    case IsSolved::Yes:
+      return true;
+    default:
+      return false;
+  }
 }
