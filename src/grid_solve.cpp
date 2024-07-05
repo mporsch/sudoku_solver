@@ -37,7 +37,10 @@ Alphabet GetAlphabet(const Grid& grid)
   return fields;
 }
 
-IsSolved Solve(const Grid &grid, const Alphabet& alphabet)
+IsSolved Solve(
+  const Grid &grid,
+  Grid::iterator::difference_type pos,
+  const Alphabet& alphabet)
 {
   switch(auto isSolved = Check(grid)) {
     case IsSolved::Yes:
@@ -52,16 +55,23 @@ IsSolved Solve(const Grid &grid, const Alphabet& alphabet)
   // next up we will modify the grid so now is the time to copy
   auto copy = grid;
 
-  if(auto pos = std::find(copy.begin(), copy.end(), Field()); pos != copy.end()) {
-    for(auto&& f : alphabet) {
-      *pos = f;
+  // find the next position to write
+  auto mid = std::find(std::next(copy.begin(), pos), copy.end(), Field());
+  if(mid == copy.end()) {
+    throw std::logic_error("unexpected");
+  }
 
-      switch(auto isSolved = Solve(copy, alphabet)) {
-        case IsSolved::Yes:
-          return isSolved;
-        default:
-          break;
-      }
+  // the next field to check is after the one just written
+  pos = std::distance(copy.begin(), std::next(mid));
+
+  for(auto&& f : alphabet) {
+    *mid = f;
+
+    switch(Solve(copy, pos, alphabet)) {
+      case IsSolved::Yes:
+        return IsSolved::Yes;
+      default:
+        break;
     }
   }
   return IsSolved::Never;
@@ -71,7 +81,7 @@ IsSolved Solve(const Grid &grid, const Alphabet& alphabet)
 
 bool Solve(const Grid& grid)
 {
-  switch(Solve(grid, GetAlphabet(grid))) {
+  switch(Solve(grid, 0, GetAlphabet(grid))) {
     case IsSolved::Yes:
       return true;
     default:
