@@ -81,8 +81,8 @@ bool parse_field_line(Grid& grid, const std::string& str)
     if(auto blocks = parsed.value(); !blocks.empty()) {
       auto fields_width = std::accumulate(
         begin(blocks), end(blocks),
-        0U,
-        [](size_t sum, auto&& block) {
+        static_cast<size_t>(0),
+        [](size_t sum, auto&& block) -> size_t {
           return sum + block.size();
         });
 
