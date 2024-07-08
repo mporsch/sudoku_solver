@@ -30,11 +30,9 @@ jobs:
           -B build
           -S .
       - name: build
-        run: cmake --build build --config ${{ matrix.build_type }}
-      - name: build & run tests
         run: cmake --build build --target sudoku_solver --config ${{ matrix.build_type }}
       - name: release
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            build/sudoku_solver.exe
+            build/${{ matrix.build_type }}/sudoku_solver.exe
