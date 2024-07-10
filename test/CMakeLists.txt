@@ -1,15 +1,15 @@
 add_executable(test_grid_parse test_grid_parse.cpp)
 target_link_libraries(test_grid_parse PRIVATE sudoku_grid_io)
 
-add_executable(test_grid_check test_grid_check.cpp)
-target_link_libraries(test_grid_check PRIVATE sudoku_grid_check_impl)
+add_executable(test_grid_algo test_grid_algo.cpp)
+target_link_libraries(test_grid_algo PRIVATE sudoku_grid_algo)
 
 add_executable(test_grid_solve test_grid_solve.cpp)
 target_link_libraries(test_grid_solve PRIVATE sudoku_grid_solve)
 
 enable_testing()
 add_test(NAME test_grid_parse COMMAND test_grid_parse)
-add_test(NAME test_grid_check COMMAND test_grid_check)
+add_test(NAME test_grid_algo COMMAND test_grid_algo)
 add_test(NAME test_grid_solve COMMAND test_grid_solve)
 
 set(test_args
@@ -34,7 +34,7 @@ endforeach()
 
 add_custom_target(build_tests DEPENDS
   test_grid_parse
-  test_grid_check
+  test_grid_algo
   test_grid_solve
   sudoku_solver
 )

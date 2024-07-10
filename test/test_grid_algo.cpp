@@ -1,15 +1,17 @@
-#include "grid_check_impl.h"
 #include "grid.h"
+#include "grid_algo.h"
 
+#include <algorithm>
 #include <cstdlib>
 #include <deque>
+#include <ranges>
 
 template<typename GetReferenceGroups>
 struct CheckExpected
 {
-  bool operator()(Grid::container sorted)
+  bool operator()(std::ranges::viewable_range auto&& r)
   {
-    return GetNextRange() == sorted;
+    return std::ranges::equal(r, std::views::all(GetNextRange()));
   }
 
   Grid::container GetNextRange()
@@ -131,7 +133,7 @@ Grid ReferenceGrid6x6_3x2()
 int main()
 {
   return (true
-  && Checker<CheckExpected<ReferenceGroups>>{ReferenceGrid()}
-  && Checker<CheckExpected<ReferenceGroups6x6_3x2>>{ReferenceGrid6x6_3x2()}
+  && allOf(ReferenceGrid(), CheckExpected<ReferenceGroups>())
+  && allOf(ReferenceGrid6x6_3x2(), CheckExpected<ReferenceGroups6x6_3x2>())
   ? EXIT_SUCCESS : EXIT_FAILURE);
 }

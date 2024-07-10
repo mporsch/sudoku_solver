@@ -27,11 +27,11 @@ target_link_libraries(sudoku_grid_io
   PRIVATE foonathan::lexy::ext foonathan::lexy::core
 )
 
-add_library(sudoku_grid_check_impl INTERFACE
-  src/grid_check_impl.h
+add_library(sudoku_grid_algo INTERFACE
+  src/grid_algo.h
 )
-target_compile_features(sudoku_grid_check_impl INTERFACE cxx_std_23) # for std::views::stride
-target_link_libraries(sudoku_grid_check_impl
+target_compile_features(sudoku_grid_algo INTERFACE cxx_std_23) # for std::views::stride
+target_link_libraries(sudoku_grid_algo
   INTERFACE sudoku_grid
 )
 
@@ -41,7 +41,7 @@ add_library(sudoku_grid_check
 )
 target_link_libraries(sudoku_grid_check
   PUBLIC sudoku_grid
-  PRIVATE sudoku_grid_check_impl
+  PRIVATE sudoku_grid_algo
 )
 
 add_library(sudoku_grid_solve
