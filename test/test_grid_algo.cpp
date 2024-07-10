@@ -133,7 +133,7 @@ Grid ReferenceGrid6x6_3x2()
 int main()
 {
   return (true
-  && allOf(ReferenceGrid(), CheckExpected<ReferenceGroups>())
-  && allOf(ReferenceGrid6x6_3x2(), CheckExpected<ReferenceGroups6x6_3x2>())
+  && AllGroupsOf(ReferenceGrid(), CheckExpected<ReferenceGroups>())
+  && AllGroupsOf(ReferenceGrid6x6_3x2(), CheckExpected<ReferenceGroups6x6_3x2>())
   ? EXIT_SUCCESS : EXIT_FAILURE);
 }

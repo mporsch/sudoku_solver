@@ -2,12 +2,17 @@
 
 #include "hypervector.h"
 
+#include <optional>
+#include <set>
+
 struct Field
 {
   using value_type = char;
+  using Candidates = std::set<value_type>;
 
   static constexpr value_type undef = 0;
 
+  std::optional<Candidates> candidates;
   value_type num;
 
   constexpr Field()
@@ -18,6 +23,11 @@ struct Field
   constexpr Field(value_type num)
   : num(num)
   {
+  }
+
+  operator value_type() const noexcept
+  {
+    return num;
   }
 
   friend bool operator==(const Field& lhs, const Field& rhs) noexcept

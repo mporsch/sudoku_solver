@@ -22,12 +22,12 @@ Grid ReferenceGrid()
 Grid ReferenceGrid6x6_3x2()
 {
   auto grid = Grid{
-    {1, 2, 6, 3, 4, 5},
-    {5, 3, 4, 2, 1, 6},
-    {6, 4, 1, 5, 3, 2},
-    {2, 5, 3, 4, 6, 1},
-    {3, 1, 5, 6, 2, 4},
-    {0, 0, 0, 0, 0, 0}};
+    {1, 0, 0, 0, 4, 0},
+    {5, 0, 0, 2, 0, 0},
+    {0, 4, 1, 0, 0, 0},
+    {0, 0, 0, 4, 6, 0},
+    {0, 0, 5, 0, 0, 4},
+    {0, 6, 0, 0, 0, 3}};
   grid.blockWidth = 3;
   grid.blockHeight = 2;
   return grid;
@@ -36,7 +36,7 @@ Grid ReferenceGrid6x6_3x2()
 int main(int, char**)
 {
   return (true
-  && Solve(ReferenceGrid())
   && Solve(ReferenceGrid6x6_3x2())
+  && Solve(ReferenceGrid())
   ? EXIT_SUCCESS : EXIT_FAILURE);
 }

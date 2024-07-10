@@ -1,19 +1,18 @@
 #include "grid_solve.h"
+#include "grid_algo.h"
 #include "grid_check.h"
 #include "grid_print.h"
 
 #include <algorithm>
+#include <cassert>
 #include <iostream>
+#include <ranges>
 #include <stdexcept>
 
 namespace {
 
-// i.e. the alphabet of the Sudoku; 1-9 in most cases but not necessarily
-using Elements = Grid::container;
-
-Elements GetElements(const Grid& grid)
+Grid::container UniqueDigits(Grid::container fields)
 {
-  auto fields = Elements(grid.begin(), grid.end());
   std::sort(begin(fields), end(fields));
 
   // trim empty fields
@@ -24,6 +23,16 @@ Elements GetElements(const Grid& grid)
 
   // remove duplicates
   fields.erase(std::unique(begin(fields), end(fields)), end(fields));
+
+  return fields;
+}
+
+// i.e. the alphabet of the Sudoku; 1-9 in most cases but not necessarily
+using Elements = Grid::container;
+
+Elements GetElements(const Grid& grid)
+{
+  auto fields = UniqueDigits(Elements(grid.begin(), grid.end()));
 
   // fill up if we don't have enough values yet
   while(fields.size() < grid.blockWidth * grid.blockHeight) {
@@ -38,10 +47,50 @@ Elements GetElements(const Grid& grid)
   return fields;
 }
 
-IsSolved Solve(
-  Grid &grid,
-  Grid::iterator mid,
-  const Elements& elements)
+struct AnnotateCandidates
+{
+  const Elements& elements;
+
+  void operator()(std::ranges::viewable_range auto&& range) const
+  {
+    auto givens = UniqueDigits(ToFields(range));
+
+    // the candidates of this group are all elements that are not given in it
+    Field::Candidates groupCandidates;
+    (void)std::set_difference(
+      begin(elements), end(elements),
+      begin(givens), end(givens),
+      std::inserter(groupCandidates, begin(groupCandidates)));
+
+    for(auto&& field : range) {
+      if(field == Field()) {
+        // keep only the field's candidates that are candidates of this group
+        for(auto c = begin(*field.candidates); c != end(*field.candidates);) {
+          if(groupCandidates.contains(*c)) {
+            ++c;
+          } else {
+            c = field.candidates->erase(c);
+          }
+        }
+      }
+    }
+  }
+};
+
+void Annotate(Grid& grid)
+{
+  auto elements = GetElements(grid);
+
+  for(auto&& f : grid) {
+    if(f == Field()) {
+      f.candidates.emplace(begin(elements), end(elements));
+    }
+  }
+
+  ForEachGroup(grid, AnnotateCandidates{elements});
+}
+
+IsSolved Solve(Grid &grid, Grid::iterator mid)
 {
   // check if this branch is or can even be solved
   switch(auto isSolved = Check(grid)) {
@@ -63,12 +112,13 @@ IsSolved Solve(
   // the next field to check is after the one just written
   auto next = std::next(mid);
 
-  for(auto&& field : elements) {
+  assert(mid->candidates.has_value());
+  for(auto&& candidate : *mid->candidates) {
     // try a candidate element
-    *mid = field;
+    mid->num = candidate;
 
     // step into a branch based on this modification
-    switch(Solve(grid, next, elements)) {
+    switch(Solve(grid, next)) {
       case IsSolved::Yes:
         return IsSolved::Yes;
       default:
@@ -77,7 +127,7 @@ IsSolved Solve(
   }
 
   // revert our failed change and give up on this branch
-  *mid = Field();
+  mid->num = Field::undef;
   return IsSolved::Never;
 }
 
@@ -85,7 +135,9 @@ IsSolved Solve(
 
 bool Solve(Grid grid)
 {
-  switch(Solve(grid, grid.begin(), GetElements(grid))) {
+  Annotate(grid);
+
+  switch(Solve(grid, grid.begin())) {
     case IsSolved::Yes:
       return true;
     default:
