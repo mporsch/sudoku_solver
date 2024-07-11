@@ -123,13 +123,15 @@ struct ForEachGroup
 constexpr grid_algo_detail::AllGroupsOf AllGroupsOf;
 constexpr grid_algo_detail::ForEachGroup ForEachGroup;
 
-Grid::container ToFields(std::ranges::viewable_range auto&& range)
+// should work for Digits or Fields
+template<typename Container>
+Container To(std::ranges::viewable_range auto&& range)
 {
   if constexpr(std::ranges::forward_range<decltype(range)>) {
-    return Grid::container(range.begin(), range.end());
+    return Container(range.begin(), range.end());
   }
 
-  Grid::container c;
+  Container c;
   c.reserve(9); // reasonable size assumption
   for(auto&&f : range) {
     c.push_back(f);

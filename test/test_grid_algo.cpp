@@ -14,17 +14,17 @@ struct CheckExpected
     return std::ranges::equal(r, std::views::all(GetNextRange()));
   }
 
-  Grid::container GetNextRange()
+  Fields GetNextRange()
   {
     // the groups to check
-    static std::deque<Grid::container> groups = GetReferenceGroups();
+    static std::deque<Fields> groups = GetReferenceGroups();
 
     auto group = std::move(groups.front());
     groups.pop_front();
 
     for(auto&& f : group) {
-      if(f.num) {
-        f.num += 48; // upshift from integer to ASCII
+      if(f.digit) {
+        f.digit += 48; // upshift from integer to ASCII
       }
     }
 
@@ -34,9 +34,9 @@ struct CheckExpected
 
 struct ReferenceGroups
 {
-  operator std::deque<Grid::container>() const
+  operator std::deque<Fields>() const
   {
-    return std::deque<Grid::container>{
+    return std::deque<Fields>{
       // field rows
       {5, 3, 4, 6, 7, 8, 9, 1, 2},
       {6, 7, 2, 1, 9, 5, 3, 4, 8},
@@ -72,9 +72,9 @@ struct ReferenceGroups
 
 struct ReferenceGroups6x6_3x2
 {
-  operator std::deque<Grid::container>() const
+  operator std::deque<Fields>() const
   {
-    return std::deque<Grid::container>{
+    return std::deque<Fields>{
       // field rows
       {1, 2, 6, 3, 4, 5},
       {5, 3, 4, 2, 1, 6},

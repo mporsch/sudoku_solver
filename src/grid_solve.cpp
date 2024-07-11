@@ -12,49 +12,54 @@
 
 namespace {
 
-Grid::container UniqueDigits(Grid::container fields)
+Digits UniqueDigits(Digits digits)
 {
-  std::sort(begin(fields), end(fields));
+  std::sort(begin(digits), end(digits));
 
-  // trim empty fields
-  fields.erase(
-    begin(fields),
-    std::find_if(begin(fields), end(fields), [](const Field& f) { return f != Field(); })
+  // trim empty digits
+  (void)digits.erase(
+    begin(digits),
+    std::find_if(
+      begin(digits), end(digits),
+      [](auto d) { return (d != Field::undef); }
+    )
   );
 
   // remove duplicates
-  fields.erase(std::unique(begin(fields), end(fields)), end(fields));
+  (void)digits.erase(
+    std::unique(begin(digits), end(digits)),
+    end(digits)
+  );
 
-  return fields;
+  return digits;
 }
 
-// i.e. the alphabet of the Sudoku; 1-9 in most cases but not necessarily
-using Elements = Grid::container;
-
-Elements GetElements(const Grid& grid)
+// the *whole* alphabet of the Sudoku; 1-9 in most cases but not necessarily
+Digits GetElements(const Grid& grid)
 {
-  auto fields = UniqueDigits(Elements(grid.begin(), grid.end()));
+  auto elements = UniqueDigits(Digits(grid.begin(), grid.end()));
 
   // fill up if we don't have enough values yet
-  while(fields.size() < grid.blockWidth * grid.blockHeight) {
+  while(elements.size() < grid.blockWidth * grid.blockHeight) {
     // this is dumb, but we can only easily make up some yet-unused values
-    fields.push_back(fields.back().num + 1);
+    elements.push_back(elements.back() + 1);
   }
 
-  if(fields.size() != grid.blockWidth * grid.blockHeight) {
-    throw std::invalid_argument("more field values than block size");
+  if(elements.size() != grid.blockWidth * grid.blockHeight) {
+    throw std::invalid_argument("more elements than block size");
   }
 
-  return fields;
+  return elements;
 }
 
 struct AnnotateCandidates
 {
-  const Elements& elements;
+  const Digits& elements;
 
   void operator()(std::ranges::viewable_range auto&& range) const
   {
-    auto givens = UniqueDigits(ToFields(range));
+    // clues, i.e. the fields that already have a value
+    auto givens = UniqueDigits(To<Digits>(range));
 
     // the candidates of this group are all elements that are not givens in it
     Field::Candidates groupCandidates;
@@ -65,7 +70,7 @@ struct AnnotateCandidates
       std::back_inserter(groupCandidates));
 
     for(auto&& field : range) {
-      if(field == Field()) {
+      if(!field.HasValue()) {
         assert(field.candidates.has_value());
         auto&& fieldCandidates = *field.candidates;
 
@@ -73,9 +78,9 @@ struct AnnotateCandidates
         (void)fieldCandidates.erase(
           std::remove_if(
             begin(fieldCandidates), end(fieldCandidates),
-            [&](auto&& candidate) -> bool {
-              auto it = std::find(begin(groupCandidates), end(groupCandidates), candidate);
-              return it == end(groupCandidates);
+            [&](auto c) -> bool {
+              auto it = std::find(begin(groupCandidates), end(groupCandidates), c);
+              return (it == end(groupCandidates));
             }
           ),
           end(fieldCandidates)
@@ -90,8 +95,8 @@ void Annotate(Grid& grid)
   auto elements = GetElements(grid);
 
   for(auto&& f : grid) {
-    if(f == Field()) {
-      f.candidates.emplace(begin(elements), end(elements));
+    if(!f.HasValue()) {
+      f.candidates.emplace(elements);
     }
   }
 
@@ -122,7 +127,7 @@ Order GetOrder(Grid &grid)
     std::remove_if(
       begin(order), end(order),
       [&](auto&& it) -> bool {
-        return *it != Field();
+        return it->HasValue();
       }
     ),
     end(order)
@@ -159,8 +164,8 @@ IsSolved Solve(
   // iterate the unsolved field's candidates
   assert(field->candidates.has_value());
   for(auto&& candidate : *field->candidates) {
-    // try a candidate element
-    field->num = candidate;
+    // try a candidate
+    field->digit = candidate;
 
     // step into a branch based on this modification
     switch(Solve(grid, next, last)) {
@@ -172,7 +177,7 @@ IsSolved Solve(
   }
 
   // revert our failed change and give up on this branch
-  field->num = Field::undef;
+  field->digit = Field::undef;
   return IsSolved::Never;
 }
 

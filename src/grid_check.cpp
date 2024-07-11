@@ -32,11 +32,14 @@ struct CheckUnique
 
   bool operator()(std::ranges::viewable_range auto&& range)
   {
-    auto group = ToFields(range);
+    auto group = To<Digits>(range);
     std::sort(begin(group), end(group));
 
     // find where the empty fields end and the field values begin
-    auto mid = std::find_if(begin(group), end(group), [](const Field& f) { return f != Field(); });
+    auto mid = std::find_if(
+      begin(group), end(group),
+      [](auto d) { return (d != Field::undef); }
+    );
 
     if(std::unique(mid, end(group)) != end(group)) {
       result |= IsSolved::Never;
