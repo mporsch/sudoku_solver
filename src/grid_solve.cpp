@@ -75,16 +75,13 @@ struct AnnotateCandidates
         auto&& fieldCandidates = *field.candidates;
 
         // keep only the field's candidates that are candidates of this group
-        (void)fieldCandidates.erase(
-          std::remove_if(
-            begin(fieldCandidates), end(fieldCandidates),
-            [&](auto c) -> bool {
-              auto it = std::find(begin(groupCandidates), end(groupCandidates), c);
-              return (it == end(groupCandidates));
-            }
-          ),
-          end(fieldCandidates)
-        );
+        Field::Candidates filtered;
+        filtered.reserve(fieldCandidates.size());
+        (void)std::set_intersection(
+          begin(fieldCandidates), end(fieldCandidates),
+          begin(groupCandidates), end(groupCandidates),
+          std::back_inserter(filtered));
+        fieldCandidates = std::move(filtered);
       }
     }
   }
