@@ -31,7 +31,7 @@ constexpr auto sepRightBlockField = SepField("|\n");
 
 std::ostream& operator<<(std::ostream& os, const Field& f)
 {
-  os << ' ' << (f.num ? f.num : ' ') << ' ';
+  os << ' ' << (f.digit ? f.digit : ' ') << ' ';
   return os;
 }
 

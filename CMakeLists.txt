@@ -51,7 +51,7 @@ add_library(sudoku_grid_solve
 target_compile_features(sudoku_grid_solve PRIVATE cxx_std_17) # for [[fallthrough]]
 target_link_libraries(sudoku_grid_solve
   PUBLIC sudoku_grid
-  PRIVATE sudoku_grid_check sudoku_grid_io
+  PRIVATE sudoku_grid_check sudoku_grid_io sudoku_grid_algo
 )
 
 add_library(sudoku_solver_args

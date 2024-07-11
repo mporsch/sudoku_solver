@@ -6,20 +6,6 @@
 
 namespace {
 
-Grid::container ToGridContainer(std::ranges::viewable_range auto&& r)
-{
-  if constexpr(std::ranges::forward_range<decltype(r)>) {
-    return Grid::container(r.begin(), r.end());
-  }
-
-  Grid::container c;
-  c.reserve(9); // reasonable size assumption
-  for(auto&&f : r) {
-    c.push_back(f);
-  }
-  return c;
-}
-
 IsSolved& operator|=(IsSolved& lhs, IsSolved rhs)
 {
   if(lhs < rhs) {
@@ -44,14 +30,16 @@ struct CheckUnique
 {
   IsSolved result = IsSolved::Yes;
 
-  bool operator()(std::ranges::viewable_range auto&& r)
+  bool operator()(std::ranges::viewable_range auto&& range)
   {
-    auto group = ToGridContainer(r);
-
+    auto group = To<Digits>(range);
     std::sort(begin(group), end(group));
 
     // find where the empty fields end and the field values begin
-    auto mid = std::find_if(begin(group), end(group), [](const Field& f) { return f != Field(); });
+    auto mid = std::find_if(
+      begin(group), end(group),
+      [](auto d) { return (d != Field::undef); }
+    );
 
     if(std::unique(mid, end(group)) != end(group)) {
       result |= IsSolved::Never;
@@ -67,6 +55,6 @@ struct CheckUnique
 IsSolved Check(const Grid& grid)
 {
   auto checker = CheckUnique{};
-  (void)allOf(grid, checker); // this is a concession for using all_of internally
+  (void)AllGroupsOf(grid, checker); // this is a concession for using all_of internally
   return checker.result;
 }

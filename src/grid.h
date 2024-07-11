@@ -2,39 +2,60 @@
 
 #include "hypervector.h"
 
+#include <optional>
+#include <vector>
+
+// (parts of) the alphabet of the Sudoku; [1-9] in most cases but not necessarily
+using Digit = char;
+using Digits = std::vector<Digit>;
+
+// cells of the Sudoku grid
 struct Field
 {
-  using value_type = char;
+  using Candidates = Digits;
 
-  static constexpr value_type undef = 0;
+  static constexpr Digit undef = 0;
 
-  value_type num;
+  Digit digit;
+  std::optional<Candidates> candidates;
 
   constexpr Field()
-  : num(undef)
+  : digit(undef)
   {
   }
 
-  constexpr Field(value_type num)
-  : num(num)
+  constexpr Field(Digit digit)
+  : digit(digit)
   {
+  }
+
+  bool HasValue() const noexcept
+  {
+    return (digit != undef);
+  }
+
+  operator Digit() const noexcept
+  {
+    return digit;
   }
 
   friend bool operator==(const Field& lhs, const Field& rhs) noexcept
   {
-    return lhs.num == rhs.num;
+    return lhs.digit == rhs.digit;
   }
 
   friend bool operator!=(const Field& lhs, const Field& rhs) noexcept
   {
-    return lhs.num != rhs.num;
+    return lhs.digit != rhs.digit;
   }
 
   friend bool operator<(const Field& lhs, const Field& rhs) noexcept
   {
-    return lhs.num < rhs.num;
+    return lhs.digit < rhs.digit;
   }
 };
+
+using Fields = std::vector<Field>;
 
 struct Grid : public hypervector<Field, 2> // row-major
 {
@@ -57,8 +78,8 @@ struct Grid : public hypervector<Field, 2> // row-major
     , blockWidth(3)
   {
     for(auto&& f : *this) {
-      if(f.num) {
-        f.num += 48; // upshift from integer to ASCII
+      if(f.digit) {
+        f.digit += 48; // upshift from integer to ASCII
       }
     }
   }
