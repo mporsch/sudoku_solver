@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <cassert>
 #include <iostream>
+#include <numeric>
 #include <ranges>
 #include <stdexcept>
 
@@ -96,7 +97,40 @@ void Annotate(Grid& grid)
   ForEachGroup(grid, AnnotateCandidates{elements});
 }
 
-IsSolved Solve(Grid &grid, Grid::iterator mid)
+using Order = std::vector<Grid::iterator>;
+
+struct CompareNumberOfCandidates
+{
+  bool operator()(
+    Grid::iterator lhs,
+    Grid::iterator rhs) const
+  {
+    assert(lhs->candidates.has_value() && rhs->candidates.has_value());
+    return lhs->candidates->size() < rhs->candidates->size();
+  }
+};
+
+Order GetOrder(Grid &grid)
+{
+  auto order = Order(grid.size());
+  std::iota(begin(order), end(order), grid.begin());
+
+  (void)order.erase(
+    std::remove_if(
+      begin(order), end(order),
+      [&](auto&& it) -> bool {
+        return *it != Field();
+      }
+    ),
+    end(order)
+  );
+
+  std::sort(begin(order), end(order), CompareNumberOfCandidates{});
+
+  return order;
+}
+
+IsSolved Solve(Grid &grid, Order::iterator curr, Order::iterator last)
 {
   // check if this branch is or can even be solved
   switch(auto isSolved = Check(grid)) {
@@ -109,22 +143,19 @@ IsSolved Solve(Grid &grid, Grid::iterator mid)
       break;
   }
 
-  // find the next position to write
-  mid = std::find(mid, grid.end(), Field());
-  if(mid == grid.end()) {
-    throw std::logic_error("unexpected");
-  }
-
   // the next field to check is after the one just written
-  auto next = std::next(mid);
+  auto next = std::next(curr);
 
-  assert(mid->candidates.has_value());
-  for(auto&& candidate : *mid->candidates) {
+  // the field to write
+  auto&& field = *curr;
+
+  assert(field->candidates.has_value());
+  for(auto&& candidate : *field->candidates) {
     // try a candidate element
-    mid->num = candidate;
+    field->num = candidate;
 
     // step into a branch based on this modification
-    switch(Solve(grid, next)) {
+    switch(Solve(grid, next, last)) {
       case IsSolved::Yes:
         return IsSolved::Yes;
       default:
@@ -133,7 +164,7 @@ IsSolved Solve(Grid &grid, Grid::iterator mid)
   }
 
   // revert our failed change and give up on this branch
-  mid->num = Field::undef;
+  field->num = Field::undef;
   return IsSolved::Never;
 }
 
@@ -143,7 +174,9 @@ bool Solve(Grid grid)
 {
   Annotate(grid);
 
-  switch(Solve(grid, grid.begin())) {
+  auto order = GetOrder(grid);
+
+  switch(Solve(grid, begin(order), end(order))) {
     case IsSolved::Yes:
       return true;
     default:
