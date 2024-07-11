@@ -64,14 +64,20 @@ struct AnnotateCandidates
 
     for(auto&& field : range) {
       if(field == Field()) {
+        assert(field.candidates.has_value());
+        auto&& fieldCandidates = *field.candidates;
+
         // keep only the field's candidates that are candidates of this group
-        for(auto c = begin(*field.candidates); c != end(*field.candidates);) {
-          if(groupCandidates.contains(*c)) {
-            ++c;
-          } else {
-            c = field.candidates->erase(c);
-          }
-        }
+        (void)fieldCandidates.erase(
+          std::remove_if(
+            begin(fieldCandidates), end(fieldCandidates),
+            [&](auto&& candidate) -> bool {
+              auto it = std::find(begin(groupCandidates), end(groupCandidates), candidate);
+              return it == end(groupCandidates);
+            }
+          ),
+          end(fieldCandidates)
+        );
       }
     }
   }

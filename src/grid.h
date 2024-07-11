@@ -3,12 +3,12 @@
 #include "hypervector.h"
 
 #include <optional>
-#include <set>
+#include <vector>
 
 struct Field
 {
   using value_type = char;
-  using Candidates = std::set<value_type>;
+  using Candidates = std::vector<value_type>;
 
   static constexpr value_type undef = 0;
 
