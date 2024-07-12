@@ -1,5 +1,5 @@
 #include "grid_solve.h"
-#include "grid_algo.h"
+#include "grid_annotate.h"
 #include "grid_check.h"
 #include "grid_print.h"
 
@@ -7,98 +7,8 @@
 #include <cassert>
 #include <iostream>
 #include <numeric>
-#include <ranges>
-#include <stdexcept>
 
 namespace {
-
-Digits UniqueDigits(Digits digits)
-{
-  std::sort(begin(digits), end(digits));
-
-  // trim empty digits
-  (void)digits.erase(
-    begin(digits),
-    std::find_if(
-      begin(digits), end(digits),
-      [](auto d) { return (d != Field::undef); }
-    )
-  );
-
-  // remove duplicates
-  (void)digits.erase(
-    std::unique(begin(digits), end(digits)),
-    end(digits)
-  );
-
-  return digits;
-}
-
-// the *whole* alphabet of the Sudoku; 1-9 in most cases but not necessarily
-Digits GetElements(const Grid& grid)
-{
-  auto elements = UniqueDigits(Digits(grid.begin(), grid.end()));
-
-  // fill up if we don't have enough values yet
-  while(elements.size() < grid.blockWidth * grid.blockHeight) {
-    // this is dumb, but we can only easily make up some yet-unused values
-    elements.push_back(elements.back() + 1);
-  }
-
-  if(elements.size() != grid.blockWidth * grid.blockHeight) {
-    throw std::invalid_argument("more elements than block size");
-  }
-
-  return elements;
-}
-
-struct AnnotateCandidates
-{
-  const Digits& elements;
-
-  void operator()(std::ranges::viewable_range auto&& range) const
-  {
-    // clues, i.e. the fields that already have a value
-    auto givens = UniqueDigits(To<Digits>(range));
-
-    // the candidates of this group are all elements that are not givens in it
-    Field::Candidates groupCandidates;
-    groupCandidates.reserve(elements.size());
-    (void)std::set_difference(
-      begin(elements), end(elements),
-      begin(givens), end(givens),
-      std::back_inserter(groupCandidates));
-
-    for(auto&& field : range) {
-      if(!field.HasValue()) {
-        assert(field.candidates.has_value());
-        auto&& fieldCandidates = *field.candidates;
-
-        // keep only the field's candidates that are candidates of this group
-        Field::Candidates filtered;
-        filtered.reserve(fieldCandidates.size());
-        (void)std::set_intersection(
-          begin(fieldCandidates), end(fieldCandidates),
-          begin(groupCandidates), end(groupCandidates),
-          std::back_inserter(filtered));
-        fieldCandidates = std::move(filtered);
-      }
-    }
-  }
-};
-
-void Annotate(Grid& grid)
-{
-  auto elements = GetElements(grid);
-
-  for(auto&& f : grid) {
-    if(!f.HasValue()) {
-      f.candidates.emplace(elements);
-    }
-  }
-
-  ForEachGroup(grid, AnnotateCandidates{elements});
-}
 
 using Order = std::vector<Grid::iterator>;
 
@@ -109,7 +19,7 @@ struct CompareNumberOfCandidates
     Grid::iterator rhs) const
   {
     assert(lhs->candidates.has_value() && rhs->candidates.has_value());
-    return lhs->candidates->size() < rhs->candidates->size();
+    return (lhs->candidates->size() < rhs->candidates->size());
   }
 };
 

@@ -45,6 +45,15 @@ target_link_libraries(sudoku_grid_check
   PRIVATE sudoku_grid_algo
 )
 
+add_library(sudoku_grid_annotate
+  src/grid_annotate.cpp
+  src/grid_annotate.h
+)
+target_link_libraries(sudoku_grid_annotate
+  PUBLIC sudoku_grid
+  PRIVATE sudoku_grid_algo
+)
+
 add_library(sudoku_grid_solve
   src/grid_solve.cpp
   src/grid_solve.h
@@ -52,7 +61,7 @@ add_library(sudoku_grid_solve
 target_compile_features(sudoku_grid_solve PRIVATE cxx_std_17) # for [[fallthrough]]
 target_link_libraries(sudoku_grid_solve
   PUBLIC sudoku_grid
-  PRIVATE sudoku_grid_check sudoku_grid_io sudoku_grid_algo
+  PRIVATE sudoku_grid_check sudoku_grid_annotate sudoku_grid_io
 )
 
 add_library(sudoku_solver_args
