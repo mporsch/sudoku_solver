@@ -12,6 +12,7 @@ add_library(sudoku_grid INTERFACE
   src/grid.h
 )
 target_include_directories(sudoku_grid INTERFACE src)
+target_compile_features(sudoku_grid INTERFACE cxx_std_17) # for std::optional
 target_link_libraries(sudoku_grid
   INTERFACE hypervector
 )
