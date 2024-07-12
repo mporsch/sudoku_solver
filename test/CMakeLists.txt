@@ -4,12 +4,17 @@ target_link_libraries(test_grid_parse PRIVATE sudoku_grid_io)
 add_executable(test_grid_algo test_grid_algo.cpp)
 target_link_libraries(test_grid_algo PRIVATE sudoku_grid_algo)
 
+add_executable(test_grid_annotate test_grid_annotate.cpp)
+target_compile_features(test_grid_annotate PRIVATE cxx_std_23) # for std::views::zip
+target_link_libraries(test_grid_annotate PRIVATE sudoku_grid_annotate)
+
 add_executable(test_grid_solve test_grid_solve.cpp)
 target_link_libraries(test_grid_solve PRIVATE sudoku_grid_solve)
 
 enable_testing()
 add_test(NAME test_grid_parse COMMAND test_grid_parse)
 add_test(NAME test_grid_algo COMMAND test_grid_algo)
+add_test(NAME test_grid_annotate COMMAND test_grid_annotate)
 add_test(NAME test_grid_solve COMMAND test_grid_solve)
 
 set(test_args
