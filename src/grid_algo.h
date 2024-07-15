@@ -12,11 +12,20 @@ std::ranges::viewable_range auto FieldRowRanges(auto&& grid)
   return grid | std::views::chunk(grid.width());
 }
 
-std::ranges::viewable_range auto FieldColumnRange(auto&& grid, size_t col)
+std::ranges::viewable_range auto FieldColumnRanges(auto&& grid)
 {
+  // sliding window of this shape
+  // | x | x | x |
+  // | x | x | x |
+  // | x |   |   |
+
   return grid
-  | std::views::drop(col)
-  | std::views::stride(grid.template offsetOf<0>());
+  | std::views::slide((grid.height() - 1) * grid.template offsetOf<0>() + 1)
+  | std::views::transform([&](auto&& range) {
+    // apply stride within window (not to range of windows)
+
+    return range | std::views::stride(grid.template offsetOf<0>());
+  });
 }
 
 std::ranges::viewable_range auto BlockRange(auto&& grid, size_t row, size_t col)
@@ -40,10 +49,7 @@ struct AllGroupsOf
   template<typename Pred>
   static bool CheckFieldColumns(const Grid& grid, Pred&& pred)
   {
-    return std::ranges::all_of(
-      std::views::iota(0U, grid.width()),
-      [&](size_t col) { return pred(FieldColumnRange(grid, col)); }
-    );
+    return std::ranges::all_of(FieldColumnRanges(grid), pred);
   }
 
   template<typename Pred>
@@ -81,10 +87,7 @@ struct ForEachGroup
   template<typename UnaryFunc>
   static void ForFieldColumns(Grid& grid, UnaryFunc&& func)
   {
-    std::ranges::for_each(
-      std::views::iota(0U, grid.width()),
-      [&](size_t col) { func(FieldColumnRange(grid, col)); }
-    );
+    std::ranges::for_each(FieldColumnRanges(grid), func);
   }
 
   template<typename UnaryFunc>
