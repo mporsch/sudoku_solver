@@ -41,17 +41,17 @@ struct Field
 
   friend bool operator==(const Field& lhs, const Field& rhs) noexcept
   {
-    return lhs.digit == rhs.digit;
+    return (lhs.digit == rhs.digit);
   }
 
   friend bool operator!=(const Field& lhs, const Field& rhs) noexcept
   {
-    return lhs.digit != rhs.digit;
+    return (lhs.digit != rhs.digit);
   }
 
   friend bool operator<(const Field& lhs, const Field& rhs) noexcept
   {
-    return lhs.digit < rhs.digit;
+    return (lhs.digit < rhs.digit);
   }
 };
 

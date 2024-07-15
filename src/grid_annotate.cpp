@@ -13,7 +13,7 @@ Digits UniqueDigits(Digits digits)
 {
   std::sort(begin(digits), end(digits));
 
-  // trim empty digits
+  // trim unsolved
   (void)digits.erase(
     begin(digits),
     std::find_if(

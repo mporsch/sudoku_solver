@@ -7,11 +7,9 @@
 
 namespace grid_algo_detail {
 
-std::ranges::viewable_range auto FieldRowRange(auto&& grid, size_t row)
+std::ranges::viewable_range auto FieldRowRanges(auto&& grid)
 {
-  return grid
-  | std::views::drop(grid.offsetOf(row, 0))
-  | std::views::take(grid.width());
+  return grid | std::views::chunk(grid.width());
 }
 
 std::ranges::viewable_range auto FieldColumnRange(auto&& grid, size_t col)
@@ -36,10 +34,7 @@ struct AllGroupsOf
   template<typename Pred>
   static bool CheckFieldRows(const Grid& grid, Pred&& pred)
   {
-    return std::ranges::all_of(
-      std::views::iota(0U, grid.height()),
-      [&](size_t row) { return pred(FieldRowRange(grid, row)); }
-    );
+    return std::ranges::all_of(FieldRowRanges(grid), pred);
   }
 
   template<typename Pred>
@@ -80,10 +75,7 @@ struct ForEachGroup
   template<typename UnaryFunc>
   static void ForFieldRows(Grid& grid, UnaryFunc&& func)
   {
-    std::ranges::for_each(
-      std::views::iota(0U, grid.height()),
-      [&](size_t row) { func(FieldRowRange(grid, row)); }
-    );
+    std::ranges::for_each(FieldRowRanges(grid), func);
   }
 
   template<typename UnaryFunc>
@@ -133,7 +125,7 @@ Container To(std::ranges::viewable_range auto&& range)
 
   Container c;
   c.reserve(9); // reasonable size assumption
-  for(auto&&f : range) {
+  for(auto&& f : range) {
     c.push_back(f);
   }
   return c;

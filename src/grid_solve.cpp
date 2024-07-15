@@ -23,7 +23,7 @@ struct CompareNumberOfCandidates
   }
 };
 
-Order GetOrder(Grid &grid)
+Order GetOrder(Grid& grid)
 {
   // get iterators to all fields
   auto order = Order(grid.size());
@@ -33,9 +33,7 @@ Order GetOrder(Grid &grid)
   (void)order.erase(
     std::remove_if(
       begin(order), end(order),
-      [&](auto&& it) -> bool {
-        return it->HasValue();
-      }
+      [&](auto it) -> bool { return it->HasValue(); }
     ),
     end(order)
   );
@@ -47,7 +45,7 @@ Order GetOrder(Grid &grid)
 }
 
 IsSolved Solve(
-  Grid &grid,
+  Grid& grid,
   Order::iterator curr,
   Order::iterator last)
 {
@@ -70,7 +68,7 @@ IsSolved Solve(
 
   // iterate the unsolved field's candidates
   assert(field->candidates.has_value());
-  for(auto&& candidate : *field->candidates) {
+  for(auto candidate : *field->candidates) {
     // try a candidate
     field->digit = candidate;
 
