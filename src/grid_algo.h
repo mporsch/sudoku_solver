@@ -50,69 +50,28 @@ std::ranges::viewable_range auto BlockRanges(auto&& grid)
   | std::views::join;
 }
 
-struct AllGroupsOf
-{
-  template<typename Pred>
-  static bool CheckFieldRows(const Grid& grid, Pred&& pred)
-  {
-    return std::ranges::all_of(FieldRowRanges(grid), pred);
-  }
-
-  template<typename Pred>
-  static bool CheckFieldColumns(const Grid& grid, Pred&& pred)
-  {
-    return std::ranges::all_of(FieldColumnRanges(grid), pred);
-  }
-
-  template<typename Pred>
-  static bool CheckBlocks(const Grid& grid, Pred&& pred)
-  {
-    return std::ranges::all_of(BlockRanges(grid), pred);
-  }
-
-  template<typename Pred>
-  bool operator()(const Grid& grid, Pred&& pred) const
-  {
-    return true
-    && CheckFieldRows(grid, pred)
-    && CheckFieldColumns(grid, pred)
-    && CheckBlocks(grid, pred);
-  }
-};
-
-struct ForEachGroup
-{
-  template<typename UnaryFunc>
-  static void ForFieldRows(Grid& grid, UnaryFunc&& func)
-  {
-    std::ranges::for_each(FieldRowRanges(grid), func);
-  }
-
-  template<typename UnaryFunc>
-  static void ForFieldColumns(Grid& grid, UnaryFunc&& func)
-  {
-    std::ranges::for_each(FieldColumnRanges(grid), func);
-  }
-
-  template<typename UnaryFunc>
-  static void ForBlocks(Grid& grid, UnaryFunc&& func)
-  {
-    std::ranges::for_each(BlockRanges(grid), func);
-  }
-
-  template<typename UnaryFunc>
-  void operator()(Grid& grid, UnaryFunc&& func) const
-  {
-    ForFieldRows(grid, func);
-    ForFieldColumns(grid, func);
-    ForBlocks(grid, func);
-  }
-};
-
 } // namespace grid_algo_detail
 
-constexpr grid_algo_detail::AllGroupsOf AllGroupsOf;
-constexpr grid_algo_detail::ForEachGroup ForEachGroup;
+template<typename Pred>
+bool AllGroupsOf(const Grid& grid, Pred&& pred)
+{
+  using namespace grid_algo_detail;
+
+  return true
+  && std::ranges::all_of(FieldRowRanges(grid), pred)
+  && std::ranges::all_of(FieldColumnRanges(grid), pred)
+  && std::ranges::all_of(BlockRanges(grid), pred);
+}
+
+template<typename UnaryFunc>
+void ForEachGroup(Grid& grid, UnaryFunc&& func)
+{
+  using namespace grid_algo_detail;
+
+  std::ranges::for_each(FieldRowRanges(grid), func);
+  std::ranges::for_each(FieldColumnRanges(grid), func);
+  std::ranges::for_each(BlockRanges(grid), func);
+}
 
 // should work for Digits or Fields
 template<typename Container>
