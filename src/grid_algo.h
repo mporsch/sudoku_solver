@@ -28,13 +28,25 @@ std::ranges::viewable_range auto FieldColumnRanges(auto&& grid)
   });
 }
 
-std::ranges::viewable_range auto BlockRange(auto&& grid, size_t row, size_t col)
+std::ranges::viewable_range auto BlockRanges(auto&& grid)
 {
-  return grid // block by row and column
-  | std::views::drop(grid.offsetOf(row * grid.blockHeight, col * grid.blockWidth))
-  | std::views::slide(grid.blockWidth)
-  | std::views::stride(grid.template offsetOf<0>())
-  | std::views::take(grid.blockHeight)
+  return grid
+  | std::views::chunk(grid.blockHeight * grid.width())
+  | std::views::transform([&](auto&& blockRowRange) {
+    // sliding window shaped as above, but over blocks instead of fields
+
+    return blockRowRange
+    | std::views::slide((grid.blockHeight - 1) * grid.template offsetOf<0>() + grid.blockWidth)
+    | std::views::stride(grid.blockWidth)
+    | std::views::transform([&](auto&& range) {
+      // block fields by row and column
+
+      return range
+      | std::views::chunk(grid.blockWidth)
+      | std::views::stride(grid.template offsetOf<0>() / grid.blockWidth)
+      | std::views::join;
+    });
+  })
   | std::views::join;
 }
 
@@ -55,15 +67,7 @@ struct AllGroupsOf
   template<typename Pred>
   static bool CheckBlocks(const Grid& grid, Pred&& pred)
   {
-    return std::ranges::all_of( // block rows
-      std::views::iota(0U, grid.height() / grid.blockHeight),
-      [&](size_t row) {
-        return std::ranges::all_of( // block columns
-          std::views::iota(0U, grid.width() / grid.blockWidth),
-          [&](size_t col) { return pred(BlockRange(grid, row, col)); }
-        );
-      }
-    );
+    return std::ranges::all_of(BlockRanges(grid), pred);
   }
 
   template<typename Pred>
@@ -93,15 +97,7 @@ struct ForEachGroup
   template<typename UnaryFunc>
   static void ForBlocks(Grid& grid, UnaryFunc&& func)
   {
-    std::ranges::for_each( // block rows
-      std::views::iota(0U, grid.height() / grid.blockHeight),
-      [&](size_t row) {
-        std::ranges::for_each( // block columns
-          std::views::iota(0U, grid.width() / grid.blockWidth),
-          [&](size_t col) { func(BlockRange(grid, row, col)); }
-        );
-      }
-    );
+    std::ranges::for_each(BlockRanges(grid), func);
   }
 
   template<typename UnaryFunc>

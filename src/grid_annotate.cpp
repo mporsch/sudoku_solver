@@ -77,7 +77,7 @@ struct AnnotateCandidates
 {
   const Digits& elements;
 
-  void operator()(std::ranges::viewable_range auto&& range) const
+  void operator()(std::ranges::viewable_range auto range) const
   {
     // clues, i.e. the fields that already have a value
     auto givens = UniqueDigits(To<Digits>(range));

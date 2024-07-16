@@ -9,9 +9,9 @@
 template<typename GetReferenceGroups>
 struct CheckExpected
 {
-  bool operator()(std::ranges::viewable_range auto&& r)
+  bool operator()(std::ranges::viewable_range auto range)
   {
-    return std::ranges::equal(r, std::views::all(GetNextRange()));
+    return std::ranges::equal(range, std::views::all(GetNextRange()));
   }
 
   Fields GetNextRange()

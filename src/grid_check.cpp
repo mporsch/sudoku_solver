@@ -30,7 +30,7 @@ struct CheckUnique
 {
   IsSolved result = IsSolved::Yes;
 
-  bool operator()(std::ranges::viewable_range auto&& range)
+  bool operator()(std::ranges::viewable_range auto range)
   {
     auto group = To<Digits>(range);
     std::sort(begin(group), end(group));
