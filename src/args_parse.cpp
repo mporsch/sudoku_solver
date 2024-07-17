@@ -169,13 +169,13 @@ Args ParseArgs(int argc, char** argv)
   auto input = lexy::argv_input(argc, argv);
   if(auto parsed = lexy::parse<production>(input, lexy_ext::report_error); parsed.has_value()) {
     auto&& args = parsed.value();
-    if((args.help || args.templ || args.stdinput) && !args.filepath.empty()) {
+    if((!args.help && !args.templ && !args.stdinput) || args.filepath.empty()) {
       // the argv parser interprets trailing characters as filename
       // (e.g. "--helpmee" will be registered as flag "--help" and filepath "mee")
       // due to the way we work around the separator and partial_combination
-      throw std::invalid_argument("invalid argument combination (or trailing characters)");
+      return args;
     }
-    return args;
+    std::cerr << "Invalid argument combination (or trailing characters)\n\n";
   }
   return Args{};
 }
