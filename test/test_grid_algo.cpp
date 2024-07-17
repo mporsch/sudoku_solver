@@ -17,7 +17,7 @@ struct CheckExpected
   // XXX strictly seen this violates the std::predicate concept as it modifies a state
   static Fields GetNextRange()
   {
-    // the groups to check which (per template instantiation)
+    // the groups to check with (per template instantiation)
     static std::deque<Fields> groups = GetReferenceGroups();
 
     auto group = std::move(groups.front());

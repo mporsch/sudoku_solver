@@ -113,8 +113,8 @@ struct production
     static constexpr auto rule = [] {
       auto dim = dsl::integer<Args::Template::value_type>;
       auto width_and_maybe_height = dim + dsl::opt(dsl::lit_c<'x'> >> dim);
-      auto dims = width_and_maybe_height + dsl::opt(dsl::lit_c<','> >> width_and_maybe_height);
-      return dsl::opt(dsl::lit_c<'='> >> dims) + sep;
+      auto dims = width_and_maybe_height + dsl::opt(dsl::comma >> width_and_maybe_height);
+      return dsl::opt(dsl::equal_sign >> dims) + sep;
     }();
 
     // dispatch to the appropriate constructor
@@ -168,7 +168,14 @@ Args ParseArgs(int argc, char** argv)
 {
   auto input = lexy::argv_input(argc, argv);
   if(auto parsed = lexy::parse<production>(input, lexy_ext::report_error); parsed.has_value()) {
-    return parsed.value();
+    auto&& args = parsed.value();
+    if((args.help || args.templ || args.stdinput) && !args.filepath.empty()) {
+      // the argv parser interprets trailing characters as filename
+      // (e.g. "--helpmee" will be registered as flag "--help" and filepath "mee")
+      // due to the way we work around the separator and partial_combination
+      throw std::invalid_argument("invalid argument combination (or trailing characters)");
+    }
+    return args;
   }
   return Args{};
 }
