@@ -9,14 +9,15 @@
 template<typename GetReferenceGroups>
 struct CheckExpected
 {
-  bool operator()(std::ranges::viewable_range auto range)
+  bool operator()(std::ranges::viewable_range auto range) const
   {
     return std::ranges::equal(range, std::views::all(GetNextRange()));
   }
 
-  Fields GetNextRange()
+  // XXX strictly seen this violates the std::predicate concept as it modifies a state
+  static Fields GetNextRange()
   {
-    // the groups to check
+    // the groups to check which (per template instantiation)
     static std::deque<Fields> groups = GetReferenceGroups();
 
     auto group = std::move(groups.front());

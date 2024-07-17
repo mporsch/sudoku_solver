@@ -44,20 +44,20 @@ Order GetOrder(Grid& grid)
   return order;
 }
 
-IsSolved Solve(
+bool Solve(
   Grid& grid,
   Order::iterator curr,
   Order::iterator last)
 {
-  // check if this branch is or can even be solved
-  switch(auto isSolved = Check(grid)) {
-    case IsSolved::Yes:
-      std::cout << grid;
-      [[fallthrough]];
-    case IsSolved::Never:
-      return isSolved;
-    default:
-      break;
+  // check if this branch can be solved
+  if(!IsSolvable(grid)) {
+    return false;
+  }
+
+  // the grid is solved if there are no more unsolved candidates
+  if(curr == last) {
+    std::cout << grid;
+    return true;
   }
 
   // the unsolved field to attempt in this iteration
@@ -73,17 +73,14 @@ IsSolved Solve(
     field->digit = candidate;
 
     // step into a branch based on this modification
-    switch(Solve(grid, next, last)) {
-      case IsSolved::Yes:
-        return IsSolved::Yes;
-      default:
-        break;
+    if(Solve(grid, next, last)) {
+      return true;
     }
   }
 
   // revert our failed change and give up on this branch
   field->digit = Field::undef;
-  return IsSolved::Never;
+  return false;
 }
 
 } // namespace anonymous
@@ -100,11 +97,6 @@ bool Solve(Grid grid)
   // get iterators to unsolved fields, sorted by number of candidates
   auto order = GetOrder(grid);
 
-  // start recursive solve iterations, then examine the outcome
-  switch(Solve(grid, begin(order), end(order))) {
-    case IsSolved::Yes:
-      return true;
-    default:
-      return false;
-  }
+  // do recursive solve iterations
+  return Solve(grid, begin(order), end(order));
 }
