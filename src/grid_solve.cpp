@@ -44,6 +44,20 @@ Order GetOrder(Grid& grid)
   return order;
 }
 
+bool SolveSingles(
+  Order::iterator curr,
+  Order::iterator last)
+{
+  bool found = false;
+  for(; (curr != last) && ((*curr)->candidates->size() == 1); ++curr) {
+    // "Single" (or singleton, or lone number) – The only candidate in a cell
+    (*curr)->digit = (*curr)->candidates->front();
+
+    found = true;
+  }
+  return found;
+}
+
 bool Solve(
   Grid& grid,
   Order::iterator curr,
@@ -87,16 +101,17 @@ bool Solve(
 
 bool Solve(Grid grid)
 {
-  // annotate the unsolved fields with their candidates
-  Annotate(grid);
+  Order order;
 
-  // TODO more preprocessing to solve:
-  // - "Single" (or singleton, or lone number) – The only candidate in a cell
-  // - "Hidden single" – A candidate that appears with others, but only once in a given row, column or box
+  for(bool found = true; found;) {
+    // annotate the unsolved fields with their candidates
+    Annotate(grid);
 
-  // get iterators to unsolved fields, sorted by number of candidates
-  auto order = GetOrder(grid);
+    // get iterators to unsolved fields, sorted by number of candidates
+    order = GetOrder(grid);
 
+    found = SolveSingles(begin(order), end(order));
+  }
   // do recursive solve iterations
   return Solve(grid, begin(order), end(order));
 }
