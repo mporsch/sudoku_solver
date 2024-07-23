@@ -1,4 +1,5 @@
 #include "grid_solve.h"
+#include "grid_algo.h"
 #include "grid_annotate.h"
 #include "grid_check.h"
 #include "grid_print.h"
@@ -7,6 +8,8 @@
 #include <cassert>
 #include <iostream>
 #include <numeric>
+#include <ranges>
+#include <unordered_map>
 
 namespace {
 
@@ -58,6 +61,63 @@ bool SolveSingles(
   return found;
 }
 
+struct CandidateCount
+{
+  Field* field;
+  size_t count = 1;
+};
+using CandidateCounts = std::unordered_map<Digit, CandidateCount>;
+
+CandidateCounts GetCandidateCounts(std::ranges::viewable_range auto range)
+{
+  CandidateCounts counts;
+
+  for(auto&& field : range) {
+    if(!field.HasValue()) {
+      assert(field.candidates.has_value());
+      for(auto candidate : *field.candidates) {
+        auto count = counts.find(candidate);
+        if(count == end(counts)) {
+          count = counts.insert(std::make_pair(candidate, CandidateCount{&field})).first;
+        } else {
+          ++count->second.count;
+        }
+      }
+    }
+  }
+
+  for(auto it = begin(counts); it != end(counts);) {
+    auto found = std::ranges::find(range, it->first, &Field::digit);
+    if(found != end(range)) {
+      it = counts.erase(it); // a previous iteration already solved that one -> trim
+    } else {
+      ++it;
+    }
+  }
+
+  return counts;
+}
+
+bool SolveHiddenSingles(Grid& grid)
+{
+  bool found = false;
+
+  ForEachGroup(grid, [&](std::ranges::viewable_range auto range) {
+    auto candidateCounts = GetCandidateCounts(std::move(range));
+
+    for(auto&& [candidate, candidateCount] : candidateCounts) {
+      if(candidateCount.count == 1) {
+        // "Hidden single" – A candidate that appears with others, but only once in a given row, column or box
+        assert(!candidateCount.field->HasValue() || candidateCount.field->digit == candidate);
+        candidateCount.field->digit = candidate;
+        found = true;
+      }
+    }
+  });
+
+  return found;
+}
+
 bool Solve(
   Grid& grid,
   Order::iterator curr,
@@ -106,6 +166,11 @@ bool Solve(Grid grid)
   for(bool found = true; found;) {
     // annotate the unsolved fields with their candidates
     Annotate(grid);
+
+    found = SolveHiddenSingles(grid);
+    if(found) {
+      continue;
+    }
 
     // get iterators to unsolved fields, sorted by number of candidates
     order = GetOrder(grid);
