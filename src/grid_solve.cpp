@@ -13,48 +13,50 @@
 
 namespace {
 
-using Order = std::vector<Grid::iterator>;
+using Idx = Grid::iterator::difference_type;
+using Order = std::vector<Idx>;
 
 struct CompareNumberOfCandidates
 {
-  bool operator()(
-    Grid::iterator lhs,
-    Grid::iterator rhs) const
+  const GridCandidates& grid;
+
+  bool operator()(Idx lhs, Idx rhs) const
   {
-    assert(lhs->candidates.has_value() && rhs->candidates.has_value());
-    return (lhs->candidates->size() < rhs->candidates->size());
+    return (std::next(grid.begin(), lhs)->size() < std::next(grid.begin(), rhs)->size());
   }
 };
 
-Order GetOrder(Grid& grid)
+Order GetOrder(const Grid& grid, const GridCandidates& gridCandidates)
 {
-  // get iterators to all fields
+  // get indices of all fields
   auto order = Order(grid.size());
-  std::iota(begin(order), end(order), grid.begin());
+  std::iota(begin(order), end(order), static_cast<Idx>(0));
 
-  // filter out the iterators to already solved fields
+  // filter out the indices of already solved fields
   (void)order.erase(
     std::remove_if(
       begin(order), end(order),
-      [&](auto it) -> bool { return it->HasValue(); }
+      [&](Idx idx) -> bool { return std::next(grid.begin(), idx)->HasValue(); }
     ),
     end(order)
   );
 
-  // sort iterators by number of unsolved field candidates
-  std::sort(begin(order), end(order), CompareNumberOfCandidates{});
+  // sort indices by number of unsolved field candidates
+  std::sort(begin(order), end(order), CompareNumberOfCandidates{gridCandidates});
 
   return order;
 }
 
 bool SolveSingles(
+  Grid& grid,
+  const GridCandidates& gridCandidates,
   Order::iterator curr,
   Order::iterator last)
 {
   bool found = false;
-  for(; (curr != last) && ((*curr)->candidates->size() == 1); ++curr) {
+  for(; (curr != last) && (std::next(gridCandidates.begin(), *curr)->size() == 1); ++curr) {
     // "Single" (or singleton, or lone number) – The only candidate in a cell
-    (*curr)->digit = (*curr)->candidates->front();
+    std::next(grid.begin(), *curr)->digit = std::next(gridCandidates.begin(), *curr)->front();
 
     found = true;
   }
@@ -72,10 +74,10 @@ CandidateCounts GetCandidateCounts(std::ranges::viewable_range auto range)
 {
   CandidateCounts counts;
 
-  for(auto&& field : range) {
+  for(std::tuple<Field&, const Candidates&> t : range) {
+    auto&& [field, fieldCandidates] = t;
     if(!field.HasValue()) {
-      assert(field.candidates.has_value());
-      for(auto candidate : *field.candidates) {
+      for(auto candidate : fieldCandidates) {
         auto count = counts.find(candidate);
         if(count == end(counts)) {
           count = counts.insert(std::make_pair(candidate, CandidateCount{&field})).first;
@@ -87,8 +89,8 @@ CandidateCounts GetCandidateCounts(std::ranges::viewable_range auto range)
   }
 
   for(auto it = begin(counts); it != end(counts);) {
-    auto found = std::ranges::find(range, it->first, &Field::digit);
-    if(found != end(range)) {
+    auto found = std::ranges::contains(range | std::views::elements<0>, it->first, &Field::digit);
+    if(found) {
       it = counts.erase(it); // a previous iteration already solved that one -> trim
     } else {
       ++it;
@@ -98,11 +100,13 @@ CandidateCounts GetCandidateCounts(std::ranges::viewable_range auto range)
   return counts;
 }
 
-bool SolveHiddenSingles(Grid& grid)
+bool SolveHiddenSingles(
+  Grid& grid,
+  const GridCandidates& gridCandidates)
 {
   bool found = false;
 
-  ForEachGroup(grid, [&](std::ranges::viewable_range auto range) {
+  ForEachGroup(grid, std::views::zip(grid, gridCandidates), [&](std::ranges::viewable_range auto range) {
     auto candidateCounts = GetCandidateCounts(std::move(range));
 
     for(auto&& [candidate, candidateCount] : candidateCounts) {
@@ -120,6 +124,7 @@ bool SolveHiddenSingles(Grid& grid)
 
 bool Solve(
   Grid& grid,
+  const GridCandidates& gridCandidates,
   Order::iterator curr,
   Order::iterator last)
 {
@@ -135,25 +140,25 @@ bool Solve(
   }
 
   // the unsolved field to attempt in this iteration
-  auto&& field = *curr;
+  auto&& field = *std::next(grid.begin(), *curr);
+  auto&& candidates = *std::next(gridCandidates.begin(), *curr);
 
   // the next unsolved field to check after this one
   auto next = std::next(curr);
 
   // iterate the unsolved field's candidates
-  assert(field->candidates.has_value());
-  for(auto candidate : *field->candidates) {
+  for(auto candidate : candidates) {
     // try a candidate
-    field->digit = candidate;
+    field.digit = candidate;
 
     // step into a branch based on this modification
-    if(Solve(grid, next, last)) {
+    if(Solve(grid, gridCandidates, next, last)) {
       return true;
     }
   }
 
   // revert our failed change and give up on this branch
-  field->digit = Field::undef;
+  field.digit = Field::undef;
   return false;
 }
 
@@ -161,22 +166,23 @@ bool Solve(
 
 bool Solve(Grid grid)
 {
+  GridCandidates gridCandidates;
   Order order;
 
   for(bool found = true; found;) {
     // annotate the unsolved fields with their candidates
-    Annotate(grid);
+    gridCandidates = Annotated(grid);
 
-    found = SolveHiddenSingles(grid);
+    found = SolveHiddenSingles(grid, gridCandidates);
     if(found) {
       continue;
     }
 
     // get iterators to unsolved fields, sorted by number of candidates
-    order = GetOrder(grid);
+    order = GetOrder(grid, gridCandidates);
 
-    found = SolveSingles(begin(order), end(order));
+    found = SolveSingles(grid, gridCandidates, begin(order), end(order));
   }
   // do recursive solve iterations
-  return Solve(grid, begin(order), end(order));
+  return Solve(grid, gridCandidates, begin(order), end(order));
 }

@@ -18,70 +18,54 @@ Grid ReferenceGrid6x6_3x2()
   return grid;
 }
 
-std::vector<std::optional<Field::Candidates>>
-ReferenceCandidates6x6_3x2()
+std::vector<Candidates> ReferenceCandidates6x6_3x2()
 {
-  auto candidatesList = std::vector<std::optional<Field::Candidates>>{
+  auto candidatesList = std::vector<Candidates>{
     {},
-    {{2, 3}},
-    {{2, 3, 6}},
-    {{3, 5, 6}},
+    {2, 3},
+    {2, 3, 6},
+    {3, 5, 6},
     {},
-    {{5, 6}},
+    {5, 6},
     {},
-    {{3}},
-    {{3, 4, 6}},
+    {3},
+    {3, 4, 6},
     {},
-    {{1, 3}},
-    {{1, 6}},
-    {{2, 3, 6}},
-    {},
-    {},
-    {{3, 5}},
-    {{2, 3, 5}},
-    {{2, 5}},
-    {{2, 3}},
-    {{2, 3, 5}},
-    {{2, 3}},
+    {1, 3},
+    {1, 6},
+    {2, 3, 6},
     {},
     {},
-    {{1, 2, 5}},
-    {{2, 3}},
-    {{1, 2, 3}},
+    {3, 5},
+    {2, 3, 5},
+    {2, 5},
+    {2, 3},
+    {2, 3, 5},
+    {2, 3},
     {},
-    {{1, 6}},
-    {{1, 2}},
     {},
-    {{2, 4}},
+    {1, 2, 5},
+    {2, 3},
+    {1, 2, 3},
     {},
-    {{2, 4}},
-    {{1, 5}},
-    {{1, 2, 5}},
+    {1, 6},
+    {1, 2},
+    {},
+    {2, 4},
+    {},
+    {2, 4},
+    {1, 5},
+    {1, 2, 5},
     {}
   };
 
   for(auto&& candidates : candidatesList) {
-    if(candidates.has_value()) {
-      for(auto&& c : *candidates) {
-        c += 48; // upshift from integer to ASCII
-      }
+    for(auto&& c : candidates) {
+      c += 48; // upshift from integer to ASCII
     }
   }
 
   return candidatesList;
-}
-
-bool CompareCandidates(
-  const Field& field,
-  const std::optional<Field::Candidates>& candidates)
-{
-  if(field.candidates.has_value() != candidates.has_value()) {
-    return false;
-  }
-  if(!field.candidates.has_value() && !candidates.has_value()) {
-    return true;
-  }
-  return std::ranges::equal(field.candidates.value(), candidates.value());
 }
 
 int main(int, char**)
@@ -92,8 +76,8 @@ int main(int, char**)
       ReferenceCandidates6x6_3x2()
     ),
     [](auto t) -> bool {
-      auto&& [field, candidates] = t;
-      return CompareCandidates(field, candidates);
+      auto&& [candidates, reference] = t;
+      return std::ranges::equal(candidates, reference);
     }
   )
   ? EXIT_SUCCESS : EXIT_FAILURE);

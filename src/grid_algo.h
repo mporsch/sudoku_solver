@@ -7,19 +7,19 @@
 
 namespace grid_algo_detail {
 
-std::ranges::viewable_range auto FieldRowRanges(auto&& grid)
+std::ranges::viewable_range auto FieldRowRanges(auto&& grid, std::ranges::viewable_range auto gridRange)
 {
-  return grid | std::views::chunk(grid.width());
+  return gridRange | std::views::chunk(grid.width());
 }
 
-std::ranges::viewable_range auto FieldColumnRanges(auto&& grid)
+std::ranges::viewable_range auto FieldColumnRanges(auto&& grid, std::ranges::viewable_range auto gridRange)
 {
   // sliding window of this shape
   // | x | x | x |
   // | x | x | x |
   // | x |   |   |
 
-  return grid
+  return gridRange
   | std::views::slide((grid.height() - 1) * grid.template offsetOf<0>() + 1)
   | std::views::transform([&](auto&& range) {
     // apply stride within window (not to range of windows)
@@ -28,9 +28,9 @@ std::ranges::viewable_range auto FieldColumnRanges(auto&& grid)
   });
 }
 
-std::ranges::viewable_range auto BlockRanges(auto&& grid)
+std::ranges::viewable_range auto BlockRanges(auto&& grid, std::ranges::viewable_range auto gridRange)
 {
-  return grid
+  return gridRange
   | std::views::chunk(grid.blockHeight * grid.width())
   | std::views::transform([&](auto&& blockRowRange) {
     // sliding window shaped as above, but over blocks instead of fields
@@ -52,25 +52,37 @@ std::ranges::viewable_range auto BlockRanges(auto&& grid)
 
 } // namespace grid_algo_detail
 
-template<typename Pred>
-bool AllGroupsOf(const Grid& grid, Pred&& pred)
+template<typename T, typename Pred>
+bool AllGroupsOf(const GridBase<T>& grid, std::ranges::viewable_range auto gridRange, Pred&& pred)
 {
   using namespace grid_algo_detail;
 
   return true
-  && std::ranges::all_of(FieldRowRanges(grid), pred)
-  && std::ranges::all_of(FieldColumnRanges(grid), pred)
-  && std::ranges::all_of(BlockRanges(grid), pred);
+  && std::ranges::all_of(FieldRowRanges(grid, gridRange), pred)
+  && std::ranges::all_of(FieldColumnRanges(grid, gridRange), pred)
+  && std::ranges::all_of(BlockRanges(grid, gridRange), pred);
 }
 
-template<typename UnaryFunc>
-void ForEachGroup(Grid& grid, UnaryFunc&& func)
+template<typename T, typename Pred>
+bool AllGroupsOf(const GridBase<T>& grid, Pred&& pred)
+{
+  return AllGroupsOf(grid, std::views::all(grid), pred);
+}
+
+template<typename T, typename UnaryFunc>
+void ForEachGroup(const GridBase<T>& grid, std::ranges::viewable_range auto gridRange, UnaryFunc&& func)
 {
   using namespace grid_algo_detail;
 
-  std::ranges::for_each(FieldRowRanges(grid), func);
-  std::ranges::for_each(FieldColumnRanges(grid), func);
-  std::ranges::for_each(BlockRanges(grid), func);
+  std::ranges::for_each(FieldRowRanges(grid, gridRange), func);
+  std::ranges::for_each(FieldColumnRanges(grid, gridRange), func);
+  std::ranges::for_each(BlockRanges(grid, gridRange), func);
+}
+
+template<typename T, typename UnaryFunc>
+void ForEachGroup(GridBase<T>& grid, UnaryFunc&& func)
+{
+  ForEachGroup(grid, std::views::all(grid), func);
 }
 
 // should work for Digits or Fields

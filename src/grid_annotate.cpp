@@ -2,7 +2,6 @@
 #include "grid_algo.h"
 
 #include <algorithm>
-#include <cassert>
 #include <iterator>
 #include <ranges>
 #include <stdexcept>
@@ -31,11 +30,11 @@ Digits UniqueDigits(Digits digits)
   return digits;
 }
 
-Field::Candidates Difference(
-  const Field::Candidates& c1,
-  const Field::Candidates& c2)
+Candidates Difference(
+  const Candidates& c1,
+  const Candidates& c2)
 {
-  Field::Candidates diff;
+  Candidates diff;
   diff.reserve(c1.size());
   (void)std::ranges::set_difference(
     c1, c2,
@@ -43,11 +42,11 @@ Field::Candidates Difference(
   return diff;
 }
 
-Field::Candidates Intersection(
-  const Field::Candidates& c1,
-  const Field::Candidates& c2)
+Candidates Intersection(
+  const Candidates& c1,
+  const Candidates& c2)
 {
-  Field::Candidates common;
+  Candidates common;
   common.reserve(c1.size());
   (void)std::ranges::set_intersection(
     c1, c2,
@@ -80,16 +79,14 @@ struct AnnotateCandidates
   void operator()(std::ranges::viewable_range auto range) const
   {
     // clues, i.e. the fields that already have a value
-    auto givens = UniqueDigits(To<Digits>(range));
+    auto givens = UniqueDigits(To<Digits>(range | std::views::elements<0>));
 
     // the candidates of this group are all elements that are not givens in it
     auto groupCandidates = Difference(elements, givens);
 
-    for(auto&& field : range) {
+    for(std::tuple<const Field&, Candidates&> t : range) {
+      auto&& [field, fieldCandidates] = t;
       if(!field.HasValue()) {
-        assert(field.candidates.has_value());
-        auto&& fieldCandidates = *field.candidates;
-
         // keep only the field's candidates that are candidates of this group
         fieldCandidates = Intersection(fieldCandidates, groupCandidates);
       }
@@ -99,24 +96,33 @@ struct AnnotateCandidates
 
 } // namespace anonymous
 
-void Annotate(Grid& grid)
+GridCandidates::GridCandidates() = default;
+
+GridCandidates::GridCandidates(const Grid& grid)
+: GridBase<Candidates>(grid.height(), grid.width(), grid.blockHeight, grid.blockHeight)
 {
+}
+
+GridCandidates Annotated(const Grid& grid)
+{
+  auto gridCandidates = GridCandidates(grid);
+
   // sorted list of all possible Sudoku digits
   auto elements = GetElements(grid);
 
   // add all elements as candidates to unsolved fields
-  for(auto&& f : grid) {
-    if(!f.HasValue()) {
-      f.candidates.emplace(elements);
-    }
-  }
+  (void)std::transform(
+    grid.begin(), grid.end(),
+    gridCandidates.begin(),
+    [&elements](const Field& f) -> Candidates {
+      if(!f.HasValue()) {
+        return elements;
+      }
+      return Candidates{};
+    });
 
   // trim candidates according to Sudoku constraints
-  ForEachGroup(grid, AnnotateCandidates{elements});
-}
+  ForEachGroup(grid, std::views::zip(grid, gridCandidates), AnnotateCandidates{elements});
 
-Grid Annotated(Grid grid)
-{
-  Annotate(grid);
-  return grid;
+  return gridCandidates;
 }

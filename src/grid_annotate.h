@@ -2,6 +2,12 @@
 
 #include "grid.h"
 
-void Annotate(Grid&);
+using Candidates = Digits;
 
-Grid Annotated(Grid);
+struct GridCandidates : public GridBase<Candidates>
+{
+  GridCandidates();
+  GridCandidates(const Grid&);
+};
+
+GridCandidates Annotated(const Grid&);
