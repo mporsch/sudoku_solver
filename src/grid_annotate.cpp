@@ -72,7 +72,7 @@ Digits GetElements(const Grid& grid)
   return elements;
 }
 
-struct AnnotateCandidates
+struct TrimCandidates
 {
   const Digits& elements;
 
@@ -86,6 +86,7 @@ struct AnnotateCandidates
 
     for(std::tuple<const Field&, Candidates&> t : range) {
       auto&& [field, fieldCandidates] = t;
+
       if(!field.HasValue()) {
         // keep only the field's candidates that are candidates of this group
         fieldCandidates = Intersection(fieldCandidates, groupCandidates);
@@ -122,7 +123,10 @@ GridCandidates Annotated(const Grid& grid)
     });
 
   // trim candidates according to Sudoku constraints
-  ForEachGroup(grid, std::views::zip(grid, gridCandidates), AnnotateCandidates{elements});
+  ForEachGroup(
+    grid,
+    std::views::zip(grid, gridCandidates),
+    TrimCandidates{elements});
 
   return gridCandidates;
 }

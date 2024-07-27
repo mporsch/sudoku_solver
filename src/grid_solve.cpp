@@ -10,6 +10,7 @@
 #include <numeric>
 #include <ranges>
 #include <unordered_map>
+#include <vector>
 
 namespace {
 
@@ -26,7 +27,9 @@ struct CompareNumberOfCandidates
   }
 };
 
-Order GetOrder(const Grid& grid, const GridCandidates& gridCandidates)
+Order GetOrder(
+  const Grid& grid,
+  const GridCandidates& gridCandidates)
 {
   // get indices of all fields
   auto order = Order(grid.size());
@@ -63,61 +66,31 @@ bool SolveSingles(
   return found;
 }
 
-struct CandidateCount
-{
-  Field* field;
-  size_t count = 1;
-};
-using CandidateCounts = std::unordered_map<Digit, CandidateCount>;
-
-CandidateCounts GetCandidateCounts(std::ranges::viewable_range auto range)
-{
-  CandidateCounts counts;
-
-  for(std::tuple<Field&, const Candidates&> t : range) {
-    auto&& [field, fieldCandidates] = t;
-    if(!field.HasValue()) {
-      for(auto candidate : fieldCandidates) {
-        auto count = counts.find(candidate);
-        if(count == end(counts)) {
-          count = counts.insert(std::make_pair(candidate, CandidateCount{&field})).first;
-        } else {
-          ++count->second.count;
-        }
-      }
-    }
-  }
-
-  for(auto it = begin(counts); it != end(counts);) {
-    auto found = std::ranges::contains(range | std::views::elements<0>, it->first, &Field::digit);
-    if(found) {
-      it = counts.erase(it); // a previous iteration already solved that one -> trim
-    } else {
-      ++it;
-    }
-  }
-
-  return counts;
-}
-
 bool SolveHiddenSingles(
   Grid& grid,
   const GridCandidates& gridCandidates)
 {
   bool found = false;
 
-  ForEachGroup(grid, std::views::zip(grid, gridCandidates), [&](std::ranges::viewable_range auto range) {
-    auto candidateCounts = GetCandidateCounts(std::move(range));
+  ForEachGroup(
+    grid,
+    std::views::zip(grid, gridCandidates),
+    [&](std::ranges::viewable_range auto range) {
+      auto candidateCounts = GetCandidateCounts(std::move(range));
 
-    for(auto&& [candidate, candidateCount] : candidateCounts) {
-      if(candidateCount.count == 1) {
-        // "Hidden single" – A candidate that appears with others, but only once in a given row, column or box
-        assert(!candidateCount.field->HasValue() || candidateCount.field->digit == candidate);
-        candidateCount.field->digit = candidate;
-        found = true;
+      for(auto&& [candidate, candidateCount] : candidateCounts) {
+        if(candidateCount.size() == 1) {
+          auto&& field = *candidateCount.front();
+
+          // "Hidden single" – A candidate that appears with others, but only once in a given row, column or box
+          assert(!field.HasValue() || field.digit == candidate);
+          field.digit = candidate;
+
+          found = true;
+        }
       }
     }
-  });
+  );
 
   return found;
 }
@@ -183,6 +156,7 @@ bool Solve(Grid grid)
 
     found = SolveSingles(grid, gridCandidates, begin(order), end(order));
   }
+
   // do recursive solve iterations
   return Solve(grid, gridCandidates, begin(order), end(order));
 }
