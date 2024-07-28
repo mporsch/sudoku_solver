@@ -3,7 +3,6 @@
 
 #include <algorithm>
 #include <iterator>
-#include <ranges>
 #include <stdexcept>
 
 namespace {

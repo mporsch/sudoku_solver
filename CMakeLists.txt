@@ -50,8 +50,7 @@ add_library(sudoku_grid_annotate
   src/grid_annotate.h
 )
 target_link_libraries(sudoku_grid_annotate
-  PUBLIC sudoku_grid
-  PRIVATE sudoku_grid_algo
+  PUBLIC sudoku_grid_algo sudoku_grid
 )
 
 add_library(sudoku_grid_solve
