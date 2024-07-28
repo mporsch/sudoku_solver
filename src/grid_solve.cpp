@@ -162,6 +162,8 @@ bool Solve(Grid grid)
     << grid
     << "\n\nSolving with trial and error...";
 
+  OrderCandidates(grid, gridCandidates);
+
   // do recursive solve iterations
   return Solve(grid, gridCandidates, begin(order), end(order));
 }

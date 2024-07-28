@@ -94,6 +94,70 @@ struct TrimCandidates
   }
 };
 
+struct GridCandidateCounts : public GridBase<CandidateCounts>
+{
+  GridCandidateCounts(const GridCandidates& grid)
+  : GridBase<CandidateCounts>(grid.height(), grid.width(), grid.blockHeight, grid.blockHeight)
+  {
+  }
+};
+
+GridCandidateCounts GetGridCandidateCounts(
+  Grid& grid,
+  GridCandidates& gridCandidates)
+{
+  // create with appropriate size
+  auto gridCandidateCounts = GridCandidateCounts(grid);
+
+  // create empty map entries
+  (void)std::transform(
+    gridCandidates.begin(), gridCandidates.end(),
+    gridCandidateCounts.begin(),
+    [](const Candidates& candidates) -> CandidateCounts {
+      CandidateCounts candidateCounts;
+      (void)std::transform(
+        begin(candidates), end(candidates),
+        std::inserter(candidateCounts, end(candidateCounts)),
+        [](Digit d) -> CandidateCounts::value_type {
+          return std::make_pair(d, CandidateCount{});
+        });
+      return candidateCounts;
+    });
+
+  // (over)fill map entries
+  ForEachGroup(
+    grid,
+    std::views::zip(grid, gridCandidates, gridCandidateCounts),
+    [](std::ranges::viewable_range auto range) {
+      auto groupCandidateCounts = GetCandidateCounts(
+        range
+        | std::views::transform([](auto t) -> std::tuple<Field&, const Candidates&> {
+          return {std::get<0>(t), std::get<1>(t)};
+        }));
+
+      for(auto&& fieldCandidateCounts : range | std::views::elements<2>) {
+        for(auto&& [candidate, candidateCounts] : fieldCandidateCounts) {
+          if(auto it = groupCandidateCounts.find(candidate); it != end(groupCandidateCounts)) {
+            candidateCounts.insert(end(candidateCounts), begin(it->second), end(it->second));
+          }
+        }
+      }
+    });
+
+  // remove duplicate map entries
+  for(auto&& candidateCounts : gridCandidateCounts) {
+    for(auto&& [_, candidateCount] : candidateCounts) {
+      std::sort(begin(candidateCount), end(candidateCount));
+
+      candidateCount.erase(
+        std::unique(begin(candidateCount), end(candidateCount)),
+        end(candidateCount));
+    }
+  }
+
+  return gridCandidateCounts;
+}
+
 } // namespace anonymous
 
 GridCandidates::GridCandidates() = default;
@@ -128,4 +192,20 @@ GridCandidates Annotated(const Grid& grid)
     TrimCandidates{elements});
 
   return gridCandidates;
+}
+
+void OrderCandidates(
+  Grid& grid,
+  GridCandidates& gridCandidates)
+{
+  auto gridCandidateCounts = GetGridCandidateCounts(grid, gridCandidates);
+
+  // sort the candidates by uniqueness
+  for(auto&& [candidates, candidateCounts] : std::views::zip(gridCandidates, gridCandidateCounts)) {
+    std::sort(
+      begin(candidates), end(candidates),
+      [&candidateCounts](Digit lhs, Digit rhs) -> bool {
+        return (candidateCounts.at(lhs).size() < candidateCounts.at(rhs).size());
+      });
+  }
 }

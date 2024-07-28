@@ -15,6 +15,7 @@ struct GridCandidates : public GridBase<Candidates>
 };
 
 GridCandidates Annotated(const Grid&);
+void OrderCandidates(Grid&, GridCandidates&);
 
 using CandidateCount = std::vector<Field*>;
 using CandidateCounts = std::unordered_map<Digit, CandidateCount>;
