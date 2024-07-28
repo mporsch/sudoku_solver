@@ -106,7 +106,7 @@ bool Solve(
 
   // the grid is solved if there are no more unsolved candidates
   if(curr == last) {
-    std::cout << grid;
+    std::cout << "\n\n" << grid;
     return true;
   }
 
@@ -137,6 +137,8 @@ bool Solve(
 
 bool Solve(Grid grid)
 {
+  std::cerr<< "\n\nSolving algorithmically...";
+
   GridCandidates gridCandidates;
   Order order;
 
@@ -154,6 +156,11 @@ bool Solve(Grid grid)
 
     found = SolveSingles(grid, gridCandidates, begin(order), end(order));
   }
+
+  std::cerr
+    << "\n\n"
+    << grid
+    << "\n\nSolving with trial and error...";
 
   // do recursive solve iterations
   return Solve(grid, gridCandidates, begin(order), end(order));

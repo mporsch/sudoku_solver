@@ -52,8 +52,7 @@ int ProcessGrid(Grid grid)
     << ' ' << grid.width() << 'x' << grid.height()
     << ',' << grid.blockWidth << 'x' << grid.blockHeight
     << "\n\n"
-    << grid
-    << "\n\nSolving...\n\n";
+    << grid;
 
   if(!Solve(grid)) {
     std::cerr << "did not succeed\n";
