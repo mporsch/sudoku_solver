@@ -9,8 +9,47 @@
 #include <iostream>
 #include <numeric>
 #include <ranges>
+#include <unordered_map>
+#include <vector>
 
 namespace {
+
+using Contenders = std::vector<Field*>;
+using CandidateContenders = std::unordered_map<Digit, Contenders>;
+
+CandidateContenders GetCandidateContenders(std::ranges::viewable_range auto range)
+{
+  CandidateContenders candidateContenders;
+
+  for(std::tuple<Field&, const Candidates&> t : range) {
+    auto&& [field, fieldCandidates] = t;
+
+    if(!field.HasValue()) {
+      for(auto candidate : fieldCandidates) {
+        auto contenders = candidateContenders.find(candidate);
+        if(contenders == end(candidateContenders)) {
+          contenders = candidateContenders.insert(std::make_pair(candidate, Contenders{})).first;
+//          contenders->second.reserve(range.size());
+        }
+        contenders->second.push_back(&field);
+      }
+    }
+  }
+
+  for(auto it = begin(candidateContenders); it != end(candidateContenders);) {
+    auto found = std::ranges::contains(
+      range | std::views::elements<0>,
+      it->first,
+      &Field::digit);
+    if(found) {
+      it = candidateContenders.erase(it); // a previous iteration already solved that one -> trim
+    } else {
+      ++it;
+    }
+  }
+
+  return candidateContenders;
+}
 
 using Idx = Grid::iterator::difference_type;
 using Order = std::vector<Idx>;
@@ -74,11 +113,11 @@ bool SolveHiddenSingles(
     grid,
     std::views::zip(grid, gridCandidates),
     [&](std::ranges::viewable_range auto range) {
-      auto candidateCounts = GetCandidateCounts(std::move(range));
+      auto candidateContenders = GetCandidateContenders(std::move(range));
 
-      for(auto&& [candidate, candidateCount] : candidateCounts) {
-        if(candidateCount.size() == 1) {
-          auto&& field = *candidateCount.front();
+      for(auto&& [candidate, contenders] : candidateContenders) {
+        if(contenders.size() == 1) {
+          auto&& field = *contenders.front();
 
           // "Hidden single" – A candidate that appears with others, but only once in a given row, column or box
           assert(!field.HasValue() || field.digit == candidate);
@@ -144,7 +183,7 @@ bool Solve(Grid grid)
 
   for(bool found = true; found;) {
     // annotate the unsolved fields with their candidates
-    gridCandidates = Annotated(grid);
+    gridCandidates = GridCandidates(grid);
 
     found = SolveHiddenSingles(grid, gridCandidates);
     if(found) {
@@ -162,7 +201,7 @@ bool Solve(Grid grid)
     << grid
     << "\n\nSolving with trial and error...";
 
-  OrderCandidates(grid, gridCandidates);
+  OrderCandidates(gridCandidates);
 
   // do recursive solve iterations
   return Solve(grid, gridCandidates, begin(order), end(order));

@@ -4,6 +4,8 @@
 #include <algorithm>
 #include <iterator>
 #include <stdexcept>
+#include <unordered_map>
+#include <vector>
 
 namespace {
 
@@ -94,69 +96,75 @@ struct TrimCandidates
   }
 };
 
-struct GridCandidateCounts : public GridBase<CandidateCounts>
+using Contenders = std::vector<const Candidates*>;
+using CandidateContenders = std::unordered_map<Digit, Contenders>;
+
+CandidateContenders GetCandidateContenders(std::ranges::viewable_range auto range)
 {
-  GridCandidateCounts(const GridCandidates& grid)
-  : GridBase<CandidateCounts>(grid.height(), grid.width(), grid.blockHeight, grid.blockHeight)
-  {
-  }
-};
+  CandidateContenders candidateContenders;
 
-GridCandidateCounts GetGridCandidateCounts(
-  Grid& grid,
-  GridCandidates& gridCandidates)
-{
-  // create with appropriate size
-  auto gridCandidateCounts = GridCandidateCounts(grid);
-
-  // create empty map entries
-  (void)std::transform(
-    gridCandidates.begin(), gridCandidates.end(),
-    gridCandidateCounts.begin(),
-    [](const Candidates& candidates) -> CandidateCounts {
-      CandidateCounts candidateCounts;
-      (void)std::transform(
-        begin(candidates), end(candidates),
-        std::inserter(candidateCounts, end(candidateCounts)),
-        [](Digit d) -> CandidateCounts::value_type {
-          return std::make_pair(d, CandidateCount{});
-        });
-      return candidateCounts;
-    });
-
-  // (over)fill map entries
-  ForEachGroup(
-    grid,
-    std::views::zip(grid, gridCandidates, gridCandidateCounts),
-    [](std::ranges::viewable_range auto range) {
-      auto groupCandidateCounts = GetCandidateCounts(
-        range
-        | std::views::transform([](auto t) -> std::tuple<Field&, const Candidates&> {
-          return {std::get<0>(t), std::get<1>(t)};
-        }));
-
-      for(auto&& fieldCandidateCounts : range | std::views::elements<2>) {
-        for(auto&& [candidate, candidateCounts] : fieldCandidateCounts) {
-          if(auto it = groupCandidateCounts.find(candidate); it != end(groupCandidateCounts)) {
-            candidateCounts.insert(end(candidateCounts), begin(it->second), end(it->second));
-          }
-        }
+  for(auto&& candidates : range) {
+    for(auto candidate : candidates) {
+      auto contenders = candidateContenders.find(candidate);
+      if(contenders == end(candidateContenders)) {
+        contenders = candidateContenders.insert(std::make_pair(candidate, Contenders{})).first;
+//        contenders->second.reserve(range.size());
       }
-    });
-
-  // remove duplicate map entries
-  for(auto&& candidateCounts : gridCandidateCounts) {
-    for(auto&& [_, candidateCount] : candidateCounts) {
-      std::sort(begin(candidateCount), end(candidateCount));
-
-      candidateCount.erase(
-        std::unique(begin(candidateCount), end(candidateCount)),
-        end(candidateCount));
+      contenders->second.push_back(&candidates);
     }
   }
 
-  return gridCandidateCounts;
+  return candidateContenders;
 }
+
+struct GridCandidateContenders : public GridBase<CandidateContenders>
+{
+  GridCandidateContenders(const GridCandidates& gridCandidates)
+  : GridBase<CandidateContenders>(gridCandidates.height(), gridCandidates.width(), gridCandidates.blockHeight, gridCandidates.blockHeight)
+  {
+    // create empty map entries
+    (void)std::transform(
+      gridCandidates.begin(), gridCandidates.end(),
+      this->begin(),
+      [](const Candidates& candidates) -> CandidateContenders {
+        CandidateContenders candidateContenders;
+        (void)std::transform(
+          candidates.begin(), candidates.end(),
+          std::inserter(candidateContenders, candidateContenders.end()),
+          [](Digit d) -> CandidateContenders::value_type {
+            return std::make_pair(d, Contenders{});
+          });
+        return candidateContenders;
+      });
+
+    // (over)fill map entries
+    ForEachGroup(
+      gridCandidates,
+      std::views::zip(gridCandidates, *this),
+      [](std::ranges::viewable_range auto range) {
+        auto groupCandidateContenders = GetCandidateContenders(range | std::views::elements<0>);
+
+        for(auto&& fieldCandidateContenders : range | std::views::elements<1>) {
+          for(auto&& [candidate, fieldContenders] : fieldCandidateContenders) {
+            if(auto groupContenders = groupCandidateContenders.find(candidate); groupContenders != groupCandidateContenders.end()) {
+              fieldContenders.insert(fieldContenders.end(), groupContenders->second.begin(), groupContenders->second.end());
+            }
+          }
+        }
+      });
+
+    // remove duplicate map entries that were found in row/colum and block
+    for(auto&& candidateContenders : *this) {
+      for(auto&& [_, contenders] : candidateContenders) {
+        std::sort(contenders.begin(), contenders.end());
+
+        contenders.erase(
+          std::unique(contenders.begin(), contenders.end()),
+          contenders.end());
+      }
+    }
+  }
+};
 
 } // namespace anonymous
 
@@ -165,19 +173,13 @@ GridCandidates::GridCandidates() = default;
 GridCandidates::GridCandidates(const Grid& grid)
 : GridBase<Candidates>(grid.height(), grid.width(), grid.blockHeight, grid.blockHeight)
 {
-}
-
-GridCandidates Annotated(const Grid& grid)
-{
-  auto gridCandidates = GridCandidates(grid);
-
   // sorted list of all possible Sudoku digits
   auto elements = GetElements(grid);
 
   // add all elements as candidates to unsolved fields
   (void)std::transform(
     grid.begin(), grid.end(),
-    gridCandidates.begin(),
+    this->begin(),
     [&elements](const Field& f) -> Candidates {
       if(!f.HasValue()) {
         return elements;
@@ -188,24 +190,20 @@ GridCandidates Annotated(const Grid& grid)
   // trim candidates according to Sudoku constraints
   ForEachGroup(
     grid,
-    std::views::zip(grid, gridCandidates),
+    std::views::zip(grid, *this),
     TrimCandidates{elements});
-
-  return gridCandidates;
 }
 
-void OrderCandidates(
-  Grid& grid,
-  GridCandidates& gridCandidates)
+void OrderCandidates(GridCandidates& gridCandidates)
 {
-  auto gridCandidateCounts = GetGridCandidateCounts(grid, gridCandidates);
+  auto gridCandidateContenders = GridCandidateContenders(gridCandidates);
 
   // sort the candidates by uniqueness
-  for(auto&& [candidates, candidateCounts] : std::views::zip(gridCandidates, gridCandidateCounts)) {
+  for(auto&& [candidates, candidateContenders] : std::views::zip(gridCandidates, gridCandidateContenders)) {
     std::sort(
       begin(candidates), end(candidates),
-      [&candidateCounts](Digit lhs, Digit rhs) -> bool {
-        return (candidateCounts.at(lhs).size() < candidateCounts.at(rhs).size());
+      [&candidateContenders](Digit lhs, Digit rhs) -> bool {
+        return (candidateContenders.at(lhs).size() < candidateContenders.at(rhs).size());
       });
   }
 }

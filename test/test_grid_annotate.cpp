@@ -72,7 +72,7 @@ int main(int, char**)
 {
   return (std::ranges::all_of(
     std::views::zip(
-      Annotated(ReferenceGrid6x6_3x2()),
+      GridCandidates(ReferenceGrid6x6_3x2()),
       ReferenceCandidates6x6_3x2()
     ),
     [](auto t) -> bool {
