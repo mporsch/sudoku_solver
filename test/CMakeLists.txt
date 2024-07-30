@@ -40,6 +40,7 @@ endforeach()
 add_custom_target(build_tests DEPENDS
   test_grid_parse
   test_grid_algo
+  test_grid_annotate
   test_grid_solve
   sudoku_solver
 )
