@@ -24,15 +24,13 @@ CandidateContenders GetCandidateContenders(std::ranges::viewable_range auto rang
   for(std::tuple<Field&, const Candidates&> t : range) {
     auto&& [field, fieldCandidates] = t;
 
-    if(!field.HasValue()) {
-      for(auto candidate : fieldCandidates) {
-        auto contenders = candidateContenders.find(candidate);
-        if(contenders == end(candidateContenders)) {
-          contenders = candidateContenders.insert(std::make_pair(candidate, Contenders{})).first;
-//          contenders->second.reserve(range.size());
-        }
-        contenders->second.push_back(&field);
+    for(auto candidate : fieldCandidates) {
+      auto contenders = candidateContenders.find(candidate);
+      if(contenders == end(candidateContenders)) {
+        contenders = candidateContenders.insert(std::make_pair(candidate, Contenders{})).first;
+//        contenders->second.reserve(range.size());
       }
+      contenders->second.push_back(&field);
     }
   }
 
@@ -89,17 +87,19 @@ Order GetOrder(
 
 bool SolveSingles(
   Grid& grid,
-  const GridCandidates& gridCandidates,
-  Order::iterator curr,
-  Order::iterator last)
+  const GridCandidates& gridCandidates)
 {
   bool found = false;
-  for(; (curr != last) && (std::next(gridCandidates.begin(), *curr)->size() == 1); ++curr) {
-    // "Single" (or singleton, or lone number) – The only candidate in a cell
-    std::next(grid.begin(), *curr)->digit = std::next(gridCandidates.begin(), *curr)->front();
 
-    found = true;
+  for(auto&& [field, candidates] : std::views::zip(grid, gridCandidates)) {
+    if(candidates.size() == 1) {
+      // "Single" (or singleton, or lone number): The only candidate in a cell
+      field.digit = candidates.front();
+
+      found = true;
+    }
   }
+
   return found;
 }
 
@@ -119,7 +119,7 @@ bool SolveHiddenSingles(
         if(contenders.size() == 1) {
           auto&& field = *contenders.front();
 
-          // "Hidden single" – A candidate that appears with others, but only once in a given row, column or box
+          // "Hidden single": A candidate that appears with others, but only once in a given row, column or box
           assert(!field.HasValue() || field.digit == candidate);
           field.digit = candidate;
 
@@ -145,7 +145,8 @@ bool Solve(
 
   // the grid is solved if there are no more unsolved candidates
   if(curr == last) {
-    std::cout << "\n\n" << grid;
+    std::cerr << "\n\n";
+    std::cout << grid;
     return true;
   }
 
@@ -179,27 +180,26 @@ bool Solve(Grid grid)
   std::cerr<< "\n\nSolving algorithmically...";
 
   GridCandidates gridCandidates;
-  Order order;
 
   for(bool found = true; found;) {
     // annotate the unsolved fields with their candidates
     gridCandidates = GridCandidates(grid);
 
-    found = SolveHiddenSingles(grid, gridCandidates);
+    found = SolveSingles(grid, gridCandidates);
     if(found) {
       continue;
     }
 
-    // get iterators to unsolved fields, sorted by number of candidates
-    order = GetOrder(grid, gridCandidates);
-
-    found = SolveSingles(grid, gridCandidates, begin(order), end(order));
+    found = SolveHiddenSingles(grid, gridCandidates);
   }
 
   std::cerr
     << "\n\n"
     << grid
     << "\n\nSolving with trial and error...";
+
+  // get iterators to unsolved fields, sorted by number of candidates
+  auto order = GetOrder(grid, gridCandidates);
 
   OrderCandidates(gridCandidates);
 
