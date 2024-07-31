@@ -4,8 +4,6 @@
 #include <algorithm>
 #include <iterator>
 #include <stdexcept>
-#include <unordered_map>
-#include <vector>
 
 namespace {
 
@@ -96,44 +94,53 @@ struct TrimCandidates
   }
 };
 
-using Contenders = std::vector<const Candidates*>;
-using CandidateContenders = std::unordered_map<Digit, Contenders>;
-
-CandidateContenders GetCandidateContenders(std::ranges::viewable_range auto range)
+// a wrapped pointer to the candidates of another grid cell
+struct ContenderCandidates
 {
-  CandidateContenders candidateContenders;
+  const Candidates* candidates;
 
-  for(auto&& candidates : range) {
-    for(auto candidate : candidates) {
-      auto contenders = candidateContenders.find(candidate);
-      if(contenders == end(candidateContenders)) {
-        contenders = candidateContenders.insert(std::make_pair(candidate, Contenders{})).first;
-//        contenders->second.reserve(range.size());
-      }
-      contenders->second.push_back(&candidates);
-    }
+  ContenderCandidates(std::tuple<const Candidates&> t)
+  : candidates(&std::get<const Candidates&>(t))
+  {
   }
 
-  return candidateContenders;
-}
+  friend bool operator<(
+    const ContenderCandidates &lhs,
+    const ContenderCandidates &rhs)
+  {
+    return (lhs.candidates < rhs.candidates);
+  }
 
-struct GridCandidateContenders : public GridBase<CandidateContenders>
+  friend bool operator==(
+    const ContenderCandidates &lhs,
+    const ContenderCandidates &rhs)
+  {
+    return (lhs.candidates == rhs.candidates);
+  }
+};
+
+// a map of candidate digit -> list of other grid cells candidates
+using CandidateContendersOrder = CandidateContenders<ContenderCandidates>;
+
+// a grid of cells with maps of cell candidate digit -> list of other grid cells candidates
+struct GridCandidateContenders : public GridBase<CandidateContendersOrder>
 {
   GridCandidateContenders(const GridCandidates& gridCandidates)
-  : GridBase<CandidateContenders>(gridCandidates.height(), gridCandidates.width(), gridCandidates.blockHeight, gridCandidates.blockHeight)
+  : GridBase<CandidateContendersOrder>(
+      gridCandidates.height(),
+      gridCandidates.width(),
+      gridCandidates.blockHeight,
+      gridCandidates.blockHeight)
   {
     // create empty map entries
     (void)std::transform(
       gridCandidates.begin(), gridCandidates.end(),
       this->begin(),
-      [](const Candidates& candidates) -> CandidateContenders {
-        CandidateContenders candidateContenders;
-        (void)std::transform(
-          candidates.begin(), candidates.end(),
-          std::inserter(candidateContenders, candidateContenders.end()),
-          [](Digit d) -> CandidateContenders::value_type {
-            return std::make_pair(d, Contenders{});
-          });
+      [](const Candidates& candidates) -> CandidateContendersOrder {
+        CandidateContendersOrder candidateContenders;
+        for(auto candidate : candidates) {
+          (void)candidateContenders[candidate];
+        }
         return candidateContenders;
       });
 
@@ -142,12 +149,17 @@ struct GridCandidateContenders : public GridBase<CandidateContenders>
       gridCandidates,
       std::views::zip(gridCandidates, *this),
       [](std::ranges::viewable_range auto range) {
-        auto groupCandidateContenders = GetCandidateContenders(range | std::views::elements<0>);
+        auto groupCandidateContenders =
+          GetCandidateContenders<ContenderCandidates, const Candidates&>(
+            range | std::views::elements<0>);
 
         for(auto&& fieldCandidateContenders : range | std::views::elements<1>) {
           for(auto&& [candidate, fieldContenders] : fieldCandidateContenders) {
-            if(auto groupContenders = groupCandidateContenders.find(candidate); groupContenders != groupCandidateContenders.end()) {
-              fieldContenders.insert(fieldContenders.end(), groupContenders->second.begin(), groupContenders->second.end());
+            if(auto it = groupCandidateContenders.find(candidate); it != groupCandidateContenders.end()) {
+              auto&& groupContenders = it->second;
+
+              fieldContenders.insert(fieldContenders.end(),
+                groupContenders.begin(), groupContenders.end());
             }
           }
         }

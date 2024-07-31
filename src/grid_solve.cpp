@@ -9,34 +9,29 @@
 #include <iostream>
 #include <numeric>
 #include <ranges>
-#include <unordered_map>
 #include <vector>
 
 namespace {
 
-using Contenders = std::vector<Field*>;
-using CandidateContenders = std::unordered_map<Digit, Contenders>;
-
-CandidateContenders GetCandidateContenders(std::ranges::viewable_range auto range)
+struct ContenderField
 {
-  CandidateContenders candidateContenders;
+  Field* field;
 
-  for(std::tuple<Field&, const Candidates&> t : range) {
-    auto&& [field, fieldCandidates] = t;
-
-    for(auto candidate : fieldCandidates) {
-      auto contenders = candidateContenders.find(candidate);
-      if(contenders == end(candidateContenders)) {
-        contenders = candidateContenders.insert(std::make_pair(candidate, Contenders{})).first;
-//        contenders->second.reserve(range.size());
-      }
-      contenders->second.push_back(&field);
-    }
+  ContenderField(std::tuple<const Candidates&, Field&> t)
+  : field(&std::get<Field&>(t))
+  {
   }
+};
 
+using CandidateContendersHiddenSingles = CandidateContenders<ContenderField>;
+
+CandidateContendersHiddenSingles TrimCandidateContenders(
+  std::ranges::viewable_range auto range,
+  CandidateContendersHiddenSingles candidateContenders)
+{
   for(auto it = begin(candidateContenders); it != end(candidateContenders);) {
     auto found = std::ranges::contains(
-      range | std::views::elements<0>,
+      range | std::views::elements<1>,
       it->first,
       &Field::digit);
     if(found) {
@@ -45,7 +40,6 @@ CandidateContenders GetCandidateContenders(std::ranges::viewable_range auto rang
       ++it;
     }
   }
-
   return candidateContenders;
 }
 
@@ -111,13 +105,15 @@ bool SolveHiddenSingles(
 
   ForEachGroup(
     grid,
-    std::views::zip(grid, gridCandidates),
+    std::views::zip(gridCandidates, grid),
     [&](std::ranges::viewable_range auto range) {
-      auto candidateContenders = GetCandidateContenders(std::move(range));
+      auto candidateContenders = TrimCandidateContenders(
+        range,
+        GetCandidateContenders<ContenderField, const Candidates&, Field&>(range));
 
       for(auto&& [candidate, contenders] : candidateContenders) {
         if(contenders.size() == 1) {
-          auto&& field = *contenders.front();
+          auto&& field = *contenders.front().field;
 
           // "Hidden single": A candidate that appears with others, but only once in a given row, column or box
           assert(!field.HasValue() || field.digit == candidate);
