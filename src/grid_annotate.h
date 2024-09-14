@@ -10,7 +10,7 @@ using Candidates = Digits;
 
 // a grid (corresponding to to the grid of fields) with entries
 // containing the unsolved field's solution candidates
-struct GridCandidates : public GridBase<Candidates>
+struct GridCandidates : public GridOf<Candidates>
 {
   GridCandidates();
   GridCandidates(const Grid&);

@@ -173,7 +173,7 @@ bool Solve(
 
 bool Solve(Grid grid)
 {
-  std::cerr<< "\n\nSolving algorithmically...";
+  std::cerr<< "\n\nSolving deterministically...";
 
   GridCandidates gridCandidates;
 
@@ -181,12 +181,9 @@ bool Solve(Grid grid)
     // annotate the unsolved fields with their candidates
     gridCandidates = GridCandidates(grid);
 
-    found = SolveSingles(grid, gridCandidates);
-    if(found) {
-      continue;
-    }
-
-    found = SolveHiddenSingles(grid, gridCandidates);
+    found = false
+    || SolveSingles(grid, gridCandidates)
+    || SolveHiddenSingles(grid, gridCandidates);
   }
 
   std::cerr

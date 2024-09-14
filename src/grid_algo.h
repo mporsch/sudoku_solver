@@ -7,12 +7,18 @@
 
 namespace grid_algo_detail {
 
-std::ranges::viewable_range auto FieldRowRanges(auto&& grid, std::ranges::viewable_range auto gridRange)
+std::ranges::viewable_range auto
+FieldRowRanges(
+  auto&& grid,
+  std::ranges::viewable_range auto gridRange)
 {
   return gridRange | std::views::chunk(grid.width());
 }
 
-std::ranges::viewable_range auto FieldColumnRanges(auto&& grid, std::ranges::viewable_range auto gridRange)
+std::ranges::viewable_range auto
+FieldColumnRanges(
+  auto&& grid,
+  std::ranges::viewable_range auto gridRange)
 {
   // sliding window of this shape
   // | x | x | x |
@@ -28,7 +34,10 @@ std::ranges::viewable_range auto FieldColumnRanges(auto&& grid, std::ranges::vie
   });
 }
 
-std::ranges::viewable_range auto BlockRanges(auto&& grid, std::ranges::viewable_range auto gridRange)
+std::ranges::viewable_range auto
+BlockRanges(
+  auto&& grid,
+  std::ranges::viewable_range auto gridRange)
 {
   return gridRange
   | std::views::chunk(grid.blockHeight * grid.width())
@@ -53,7 +62,10 @@ std::ranges::viewable_range auto BlockRanges(auto&& grid, std::ranges::viewable_
 } // namespace grid_algo_detail
 
 template<typename T, typename Pred>
-bool AllGroupsOf(const GridBase<T>& grid, std::ranges::viewable_range auto gridRange, Pred&& pred)
+bool AllGroupsOf(
+  const GridOf<T>& grid,
+  std::ranges::viewable_range auto gridRange,
+  Pred&& pred)
 {
   using namespace grid_algo_detail;
 
@@ -64,13 +76,16 @@ bool AllGroupsOf(const GridBase<T>& grid, std::ranges::viewable_range auto gridR
 }
 
 template<typename T, typename Pred>
-bool AllGroupsOf(const GridBase<T>& grid, Pred&& pred)
+bool AllGroupsOf(const GridOf<T>& grid, Pred&& pred)
 {
   return AllGroupsOf(grid, std::views::all(grid), pred);
 }
 
 template<typename T, typename UnaryFunc>
-void ForEachGroup(const GridBase<T>& grid, std::ranges::viewable_range auto gridRange, UnaryFunc&& func)
+void ForEachGroup(
+  const GridOf<T>& grid,
+  std::ranges::viewable_range auto gridRange,
+  UnaryFunc&& func)
 {
   using namespace grid_algo_detail;
 
@@ -80,7 +95,7 @@ void ForEachGroup(const GridBase<T>& grid, std::ranges::viewable_range auto grid
 }
 
 template<typename T, typename UnaryFunc>
-void ForEachGroup(GridBase<T>& grid, UnaryFunc&& func)
+void ForEachGroup(GridOf<T>& grid, UnaryFunc&& func)
 {
   ForEachGroup(grid, std::views::all(grid), func);
 }

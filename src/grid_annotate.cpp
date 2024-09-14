@@ -123,10 +123,10 @@ struct ContenderCandidates
 using CandidateContendersOrder = CandidateContenders<ContenderCandidates>;
 
 // a grid of cells with maps of cell candidate digit -> list of other grid cells candidates
-struct GridCandidateContenders : public GridBase<CandidateContendersOrder>
+struct GridCandidateContenders : public GridOf<CandidateContendersOrder>
 {
   GridCandidateContenders(const GridCandidates& gridCandidates)
-  : GridBase<CandidateContendersOrder>(
+  : GridOf<CandidateContendersOrder>(
       gridCandidates.height(),
       gridCandidates.width(),
       gridCandidates.blockHeight,
@@ -183,7 +183,11 @@ struct GridCandidateContenders : public GridBase<CandidateContendersOrder>
 GridCandidates::GridCandidates() = default;
 
 GridCandidates::GridCandidates(const Grid& grid)
-: GridBase<Candidates>(grid.height(), grid.width(), grid.blockHeight, grid.blockHeight)
+: GridOf<Candidates>(
+    grid.height(),
+    grid.width(),
+    grid.blockHeight,
+    grid.blockHeight)
 {
   // sorted list of all possible Sudoku digits
   auto elements = GetElements(grid);

@@ -54,23 +54,25 @@ struct Field
 using Fields = std::vector<Field>;
 
 template<typename T>
-struct GridBase : public hypervector<T, 2> // row-major
+struct GridOf : public hypervector<T, 2> // row-major
 {
   size_t blockHeight = 0;
   size_t blockWidth = 0;
 
-  GridBase() = default;
+  GridOf() = default;
 
-  GridBase(
-      size_t height, size_t width,
-      size_t blockHeight, size_t blockWidth)
+  GridOf(
+      size_t height,
+      size_t width,
+      size_t blockHeight,
+      size_t blockWidth)
   : hypervector<T, 2>(height, width)
   , blockHeight(blockHeight)
   , blockWidth(blockWidth)
   {
   }
 
-  GridBase(std::initializer_list<std::initializer_list<T>> init)
+  GridOf(std::initializer_list<std::initializer_list<T>> init)
   : hypervector<T, 2>(std::move(init))
   , blockHeight(3)
   , blockWidth(3)
@@ -87,7 +89,7 @@ struct GridBase : public hypervector<T, 2> // row-major
     return this->template sizeOf<1>();
   }
 
-  friend bool operator==(const GridBase& lhs, const GridBase& rhs) noexcept
+  friend bool operator==(const GridOf& lhs, const GridOf& rhs) noexcept
   {
     return true
     && (static_cast<const hypervector<Field, 2>&>(lhs) == static_cast<const hypervector<Field, 2>&>(rhs))
@@ -96,19 +98,25 @@ struct GridBase : public hypervector<T, 2> // row-major
   }
 };
 
-struct Grid : public GridBase<Field>
+struct Grid : public GridOf<Field>
 {
   Grid() = default;
 
   Grid(
-      size_t height, size_t width,
-      size_t blockHeight, size_t blockWidth)
-  : GridBase<Field>(height, width, blockHeight, blockWidth)
+      size_t height,
+      size_t width,
+      size_t blockHeight,
+      size_t blockWidth)
+  : GridOf<Field>(
+      height,
+      width,
+      blockHeight,
+      blockWidth)
   {
   }
 
   Grid(std::initializer_list<std::initializer_list<Field>> init)
-  : GridBase<Field>(std::move(init))
+  : GridOf<Field>(std::move(init))
   {
     for(auto&& f : *this) {
       if(f.digit) {
