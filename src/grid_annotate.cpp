@@ -223,3 +223,9 @@ void OrderCandidates(GridCandidates& gridCandidates)
       });
   }
 }
+
+GridCandidates OrderedCandidates(GridCandidates gridCandidates)
+{
+  OrderCandidates(gridCandidates);
+  return gridCandidates;
+}

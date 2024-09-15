@@ -43,3 +43,4 @@ GetCandidateContenders(std::ranges::viewable_range auto range)
 }
 
 void OrderCandidates(GridCandidates&);
+[[nodiscard]] GridCandidates OrderedCandidates(GridCandidates);
