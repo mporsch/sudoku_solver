@@ -25,13 +25,13 @@ set(test_args
   --template=2x3,2
   --template=2,2x2
   --template=2x3,2x3
-#  reference.txt
+  reference.txt
   reference_solved.txt
   reference_4x4,2x2.txt
   reference_4x4,2x2_solved.txt
   reference_6x6,3x2.txt
   reference_6x6,3x2_solved.txt
-#  reference_12x12,4x3.txt
+  reference_12x12,4x3.txt
 )
 foreach(test_arg ${test_args})
   add_test(NAME "sudoku_solver:${test_arg}" COMMAND sudoku_solver "${test_arg}" WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
