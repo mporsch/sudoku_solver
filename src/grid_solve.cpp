@@ -128,55 +128,54 @@ bool SolveHiddenSingles(
   return found;
 }
 
-bool Solve(
-  Grid& grid,
-  const GridCandidates& gridCandidates,
-  Order::iterator curr,
-  Order::iterator last)
+bool SolveDeterministic(Grid grid, bool verbose = false);
+
+bool SolveTrialAndError(Grid grid, GridCandidates gridCandidates)
 {
-  // check if this branch can be solved
-  if(!IsSolvable(grid)) {
-    return false;
+  Idx idx;
+  {
+    // get indices of unsolved fields, sorted by number of candidates
+    auto order = GetOrder(grid, gridCandidates);
+
+    // the grid is solved if there are no more unsolved candidates
+    if(order.empty()) {
+      std::cerr << "\n\n";
+      std::cout << grid;
+      return true;
+    }
+
+    idx = order.front();
   }
 
-  // the grid is solved if there are no more unsolved candidates
-  if(curr == last) {
-    std::cerr << "\n\n";
-    std::cout << grid;
-    return true;
-  }
+  // sort the candidates by uniqueness
+  OrderCandidates(gridCandidates);
 
   // the unsolved field to attempt in this iteration
-  auto&& field = *std::next(grid.begin(), *curr);
-  auto&& candidates = *std::next(gridCandidates.begin(), *curr);
-
-  // the next unsolved field to check after this one
-  auto next = std::next(curr);
+  auto&& field = *std::next(grid.begin(), idx);
+  auto&& candidates = *std::next(gridCandidates.begin(), idx);
 
   // iterate the unsolved field's candidates
   for(auto candidate : candidates) {
     // try a candidate
     field.digit = candidate;
 
-    // step into a branch based on this modification
-    if(Solve(grid, gridCandidates, next, last)) {
+    // check if this branch can be solved and step into a branch based on this modification
+    if(IsSolvable(grid) && SolveDeterministic(grid)) {
       return true;
     }
   }
 
-  // revert our failed change and give up on this branch
-  field.digit = Field::undef;
+  // give up on this branch
   return false;
 }
 
-} // namespace anonymous
-
-bool Solve(Grid grid)
+bool SolveDeterministic(Grid grid, bool verbose)
 {
-  std::cerr<< "\n\nSolving deterministically...";
+  if(verbose) {
+    std::cerr<< "\n\nSolving deterministically...";
+  }
 
   GridCandidates gridCandidates;
-
   for(bool found = true; found;) {
     // annotate the unsolved fields with their candidates
     gridCandidates = GridCandidates(grid);
@@ -184,18 +183,29 @@ bool Solve(Grid grid)
     found = false
     || SolveSingles(grid, gridCandidates)
     || SolveHiddenSingles(grid, gridCandidates);
+
+    // check if this branch can be solved or if we reached a dead end
+    if(!IsSolvable(grid)) {
+      return false;
+    }
   }
 
-  std::cerr
-    << "\n\n"
-    << grid
-    << "\n\nSolving with trial and error...";
+  if(verbose) {
+    std::cerr
+      << "\n\n"
+      << grid
+      << "\n\nSolving recursively with trial and error...";
+  }
 
-  // get iterators to unsolved fields, sorted by number of candidates
-  auto order = GetOrder(grid, gridCandidates);
+  return SolveTrialAndError(
+    std::move(grid),
+    std::move(gridCandidates));
+}
 
-  OrderCandidates(gridCandidates);
+} // namespace anonymous
 
+bool Solve(Grid grid)
+{
   // do recursive solve iterations
-  return Solve(grid, gridCandidates, begin(order), end(order));
+  return SolveDeterministic(std::move(grid), true);
 }

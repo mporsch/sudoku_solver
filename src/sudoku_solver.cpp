@@ -54,7 +54,7 @@ int ProcessGrid(Grid grid)
     << "\n\n"
     << grid;
 
-  if(!Solve(grid)) {
+  if(!Solve(std::move(grid))) {
     std::cerr << "did not succeed\n";
     return EXIT_FAILURE;
   }
