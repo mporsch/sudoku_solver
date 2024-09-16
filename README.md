@@ -5,7 +5,7 @@ Playground for sudoku puzzles.
 
 Printout and input parser uses ASCII terminal or text file.
 
-For example the input
+For example, the input
 ```
 +~~~+~~~+~~~+~~~+
 |   : 4 | 2 :   |
@@ -19,7 +19,7 @@ For example the input
 ```
 may be parsed from file or can be given via stdin with copy-paste or piped input.
 
-Suitable empty grid templates can be created and piped to output file. Fill in the Sudoku givens with the help of any text editor.
+Suitable empty-grid templates of arbitrary grid and block size can be created and piped to output file. Afterwards, fill in your Sudoku's givens with the help of any text editor.
 
 ## Build
 
