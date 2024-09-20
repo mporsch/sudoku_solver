@@ -3,6 +3,7 @@
 #include "grid.h"
 
 #include <ranges>
+#include <type_traits>
 #include <unordered_map>
 #include <vector>
 
@@ -24,18 +25,24 @@ using Contenders = std::vector<Contender>;
 template<typename Contender>
 using CandidateContenders = std::unordered_map<Digit, Contenders<Contender>>;
 
-template<typename Contender, typename... Entries>
-CandidateContenders<Contender>
-GetCandidateContenders(std::ranges::viewable_range auto range)
+template<
+  typename Range,
+  typename MakeContender,
+  typename T = std::ranges::range_reference_t<Range>,
+  typename R = std::invoke_result_t<MakeContender, T>
+>
+CandidateContenders<R> GetCandidateContenders(
+  Range range,
+  MakeContender makeContender)
 {
-  CandidateContenders<Contender> candidateContenders;
+  CandidateContenders<R> candidateContenders;
 
-  for(std::tuple<Entries...> t : range) {
+  for(auto t : range) {
     auto&& candidates = std::get<const Candidates&>(t);
 
     for(auto candidate : candidates) {
       // can't reserve as range has unknown size
-      candidateContenders[candidate].push_back(t);
+      candidateContenders[candidate].push_back(makeContender(t));
     }
   }
 

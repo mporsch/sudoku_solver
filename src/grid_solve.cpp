@@ -13,15 +13,14 @@
 
 namespace {
 
-struct ContenderField
-{
-  Field* field;
+// a view on another field
+using ContenderField = Field*;
 
-  ContenderField(std::tuple<const Candidates&, Field&> t)
-  : field(&std::get<Field&>(t))
-  {
-  }
-};
+ContenderField MakeContenderField(
+  std::tuple<const Candidates&, Field&> t)
+{
+  return &std::get<Field&>(t);
+}
 
 using CandidateContendersHiddenSingles = CandidateContenders<ContenderField>;
 
@@ -30,10 +29,7 @@ CandidateContendersHiddenSingles TrimCandidateContenders(
   CandidateContendersHiddenSingles candidateContenders)
 {
   for(auto it = begin(candidateContenders); it != end(candidateContenders);) {
-    auto found = std::ranges::contains(
-      range | std::views::elements<1>,
-      it->first,
-      &Field::digit);
+    auto found = std::ranges::contains(range, it->first, &Field::digit);
     if(found) {
       it = candidateContenders.erase(it); // a previous iteration already solved that one -> trim
     } else {
@@ -108,12 +104,12 @@ bool SolveHiddenSingles(
     std::views::zip(gridCandidates, grid),
     [&](std::ranges::viewable_range auto range) {
       auto candidateContenders = TrimCandidateContenders(
-        range,
-        GetCandidateContenders<ContenderField, const Candidates&, Field&>(range));
+        range | std::views::elements<1>,
+        GetCandidateContenders(range, MakeContenderField));
 
       for(auto&& [candidate, contenders] : candidateContenders) {
         if(contenders.size() == 1) {
-          auto&& field = *contenders.front().field;
+          auto&& field = *contenders.front();
 
           // "Hidden single": A candidate that appears with others, but only once in a given row, column or box
           assert(!field.HasValue() || field.digit == candidate);

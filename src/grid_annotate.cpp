@@ -94,47 +94,31 @@ struct TrimCandidates
   }
 };
 
-// a wrapped pointer to the candidates of another grid cell
-struct ContenderCandidates
-{
-  const Candidates* candidates;
-
-  ContenderCandidates(std::tuple<const Candidates&> t)
-  : candidates(&std::get<const Candidates&>(t))
-  {
-  }
-
-  friend bool operator<(
-    const ContenderCandidates &lhs,
-    const ContenderCandidates &rhs)
-  {
-    return (lhs.candidates < rhs.candidates);
-  }
-
-  friend bool operator==(
-    const ContenderCandidates &lhs,
-    const ContenderCandidates &rhs)
-  {
-    return (lhs.candidates == rhs.candidates);
-  }
-};
+// a view on the candidates of another grid cell
+using ContenderCandidates = const Candidates*;
 
 // a map of candidate digit -> list of other grid cells candidates
 using CandidateContendersOrder = CandidateContenders<ContenderCandidates>;
 
+ContenderCandidates MakeContenderCandidates(
+  std::tuple<const Candidates&, CandidateContendersOrder&> t)
+{
+  return &std::get<const Candidates&>(t);
+}
+
 // a grid of cells with maps of cell candidate digit -> list of other grid cells candidates
 struct GridCandidateContenders : public GridOf<CandidateContendersOrder>
 {
-  GridCandidateContenders(const GridCandidates& gridCandidates)
+  GridCandidateContenders(const GridCandidates& grid)
   : GridOf<CandidateContendersOrder>(
-      gridCandidates.height(),
-      gridCandidates.width(),
-      gridCandidates.blockHeight,
-      gridCandidates.blockHeight)
+      grid.height(),
+      grid.width(),
+      grid.blockHeight,
+      grid.blockHeight)
   {
     // create empty map entries
     (void)std::transform(
-      gridCandidates.begin(), gridCandidates.end(),
+      grid.begin(), grid.end(),
       this->begin(),
       [](const Candidates& candidates) -> CandidateContendersOrder {
         CandidateContendersOrder candidateContenders;
@@ -146,12 +130,10 @@ struct GridCandidateContenders : public GridOf<CandidateContendersOrder>
 
     // (over)fill map entries
     ForEachGroup(
-      gridCandidates,
-      std::views::zip(gridCandidates, *this),
+      grid,
+      std::views::zip(grid, *this),
       [](std::ranges::viewable_range auto range) {
-        auto groupCandidateContenders =
-          GetCandidateContenders<ContenderCandidates, const Candidates&>(
-            range | std::views::elements<0>);
+        auto groupCandidateContenders = GetCandidateContenders(range, MakeContenderCandidates);
 
         for(auto&& fieldCandidateContenders : range | std::views::elements<1>) {
           for(auto&& [candidate, fieldContenders] : fieldCandidateContenders) {
