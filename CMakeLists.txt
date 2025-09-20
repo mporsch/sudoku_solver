@@ -1,11 +1,14 @@
-cmake_minimum_required(VERSION 3.1.0)
+cmake_minimum_required(VERSION 3.10)
 
 project(sudoku_solver CXX)
 
 find_package(hypervector REQUIRED HINTS submodules/hypervector)
 
 include(FetchContent)
-FetchContent_Declare(lexy URL https://github.com/foonathan/lexy/releases/download/v2022.12.1/lexy-src.zip)
+FetchContent_Declare(lexy
+  URL https://github.com/foonathan/lexy/releases/download/v2025.05.0/lexy-src.zip
+  URL_HASH MD5=2b8b2c96a281d6126f512b33afe41fa9
+)
 FetchContent_MakeAvailable(lexy)
 
 add_library(sudoku_grid INTERFACE
