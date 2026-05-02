@@ -39,7 +39,7 @@ CandidateContendersHiddenSingles TrimCandidateContenders(
   return candidateContenders;
 }
 
-using Idx = Grid::iterator::difference_type;
+using Idx = Grid::difference_type;
 using Order = std::vector<Idx>;
 
 struct CompareNumberOfCandidates
@@ -168,7 +168,7 @@ bool SolveTrialAndError(Grid grid, GridCandidates gridCandidates)
 bool SolveDeterministic(Grid grid, bool verbose)
 {
   if(verbose) {
-    std::cerr<< "\n\nSolving deterministically...";
+    std::cerr << "\n\nSolving deterministically...";
   }
 
   GridCandidates gridCandidates;

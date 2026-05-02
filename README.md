@@ -32,7 +32,7 @@ For example, the input (with 4x4 size and 2x2 block size)
 may be parsed from file or can be given via stdin with copy-paste or piped input.
 The solver will print the result to the command line in the same format.
 
-Sudoku grids of higher-than normal complexity can be given, too, e.g. [a 12x12,4x3 grid with digits 0...B](test/reference_12x12,4x3.txt).
+Sudoku grids of higher-than-normal complexity can be given, too, e.g. [a 12x12,4x3 grid with digits 0...B](test/reference_12x12,4x3.txt).
 
 ## Build
 
