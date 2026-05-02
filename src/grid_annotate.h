@@ -7,18 +7,22 @@
 #include <unordered_map>
 #include <vector>
 
+// the possible solutions for a yet-unsolved field constrained by the 3 groups the field belongs to (row, column, block)
+// if only one candidate exists for a field, it is a "Single" (or singleton, or lone number) and can be solved immediately
 using Candidates = Digits;
 
 // a grid (corresponding to to the grid of fields) with entries
-// containing the unsolved field's solution candidates
+// containing the unsolved field's solution candidates (zero candidates for already solved fields)
 struct GridCandidates : public GridOf<Candidates>
 {
   GridCandidates();
   GridCandidates(const Grid&);
 };
 
-// abstract data referring to other grid cells candidates
-template<typename Contender>
+// within a group (either row, column or block) a list of cells that share a common candidate
+// if only one cell allows this candidate, it is a "Hidden single"--a candidate that appears with others,
+// but only once in a given row, column or block--and can be solved immediately
+template<typename Contender> // abstract data referring to other grid cells' candidates
 using Contenders = std::vector<Contender>;
 
 // a map of candidate digit -> list of other grid cells' data
@@ -49,5 +53,6 @@ CandidateContenders<R> GetCandidateContenders(
   return candidateContenders;
 }
 
+// sort the candidates by uniqueness
 void OrderCandidates(GridCandidates&);
 [[nodiscard]] GridCandidates OrderedCandidates(GridCandidates);
